@@ -54,18 +54,22 @@ def main(*args):
     #   https://docs.python.org/3/library/argparse.html
     #
     parser = argparse.ArgumentParser(description='Animate an epidemic')
-    parser.add_argument('--size', metavar='N', type=int, default=50,
+    parser.add_argument('--size', metavar='N', type=int, default=100,
                         help='Use a N x N simulation grid')
     parser.add_argument('--duration', metavar='T', type=int, default=100,
                         help='Simulate for T days')
-    parser.add_argument('--recovery', metavar='P', type=float, default=0.1,
+    parser.add_argument('--recovery', metavar='P', type=float, default=0.03,
                         help='Probability of recovery (per day)')
-    parser.add_argument('--infection', metavar='P', type=float, default=0.1,
-                        help='Probability of infecting a neighbour (per day)')
+    parser.add_argument('--infection_no_mask', metavar='P', type=float, default=0.6,
+                        help='Probability of person with no mask infecting a neighbour with no mask (per day)')
+    parser.add_argument('--infection_with_mask', metavar='P', type=float, default=0.1,
+                        help='Probability of person wearing mask infecting a neighbour with no mask (per day). This probability is squared if both people are wearing a mask.')
     parser.add_argument('--death', metavar='P', type=float, default=0.005,
                         help='Probability of dying when infected (per day)')
     parser.add_argument('--cases', metavar='N', type=int, default=2,
                         help='Number of initial infected people')
+    parser.add_argument('--masks', metavar='%', type=int, default=50,
+                        help='N percentage of people who wear a mask')
     parser.add_argument('--plot', action='store_true',
                         help='Generate plots instead of an animation')
     parser.add_argument('--file', metavar='N', type=str, default=None,
@@ -74,8 +78,9 @@ def main(*args):
 
     # Set up the simulation
     simulation = Simulation(args.size, args.size,
-                            args.recovery, args.infection, args.death)
+                            args.recovery, args.infection_no_mask, args.infection_with_mask, args.death)
     simulation.infect_randomly(args.cases)
+    simulation.assign_masks_randomly(args.masks)
 
     # Plot or animation?
     if args.plot:
@@ -199,51 +204,73 @@ class Simulation:
     """
 
     # Status codes to store in the numpy array representing the state.
-    SUSCEPTIBLE = 0
-    INFECTED = 1
-    RECOVERED = 2
-    DEAD = 3
+    SUSCEPTIBLE_NO_MASK = 0
+    SUSCEPTIBLE_WITH_MASK = 1
+    INFECTED_NO_MASK = 2
+    INFECTED_WITH_MASK = 3
+    RECOVERED = 4
+    DEAD = 5
 
     STATUSES = {
-        'susceptible': SUSCEPTIBLE,
-        'infected': INFECTED,
+        'susceptible no mask': SUSCEPTIBLE_NO_MASK,
+        'suseptible with mask': SUSCEPTIBLE_WITH_MASK,
+        'infected no mask': INFECTED_NO_MASK,
+        'infected with mask': INFECTED_WITH_MASK,
         'recovered': RECOVERED,
         'dead': DEAD,
     }
     COLOURMAP = {
-        'susceptible': 'green',
-        'infected': 'red',
-        'recovered': 'blue',
+        'susceptible no mask': 'yellow',
+        'suseptible with mask': 'green',
+        'infected no mask': 'red',
+        'infected with mask': 'magenta',
+        'recovered': 'cyan',
         'dead': 'black',
     }
     COLOURMAP_RGB = {
-        'red': (255, 0, 0),
+        'yellow': (255, 255, 0),
         'green': (0, 255, 0),
-        'blue': (0, 0, 255),
+       'red': (255, 0, 0),
+       'magenta': (255, 0, 255),
+        'cyan': (0, 255, 255),
         'black': (0, 0, 0),
     }
 
-    def __init__(self, width, height, recovery, infection, death):
+    def __init__(self, width, height, recovery, infection_no_mask, infection_with_mask, death):
         # Basic simulation parameters:
         self.day = 0
         self.width = width
         self.height = height
         self.recovery_probability = recovery
-        self.infection_probability = infection
+        self.infection_probability_no_mask = infection_no_mask
+        self.infection_probability_with_mask = infection_with_mask
         self.death_probability = death
 
         # Initial state (everyone susceptible)
         self.state = np.zeros((width, height), int)
-        self.state[:, :] = self.SUSCEPTIBLE
+        self.state[:, :] = self.SUSCEPTIBLE_NO_MASK
 
-    def infect_randomly(self, num):
+    def infect_randomly(self, nu):
         """Choose num people randomly and make them infected"""
-        for n in range(num):
+        for n in range(nu):
             # Choose a random x, y coordinate and make that person infected
             # NOTE: This might select the same person twice...
             i = randint(self.width)
             j = randint(self.height)
-            self.state[i, j] = self.INFECTED
+            self.state[i, j] = self.INFECTED_NO_MASK
+            
+    def assign_masks_randomly(self, percent_in_masks):
+        """Choose num of people randomly and make them wear a mask"""
+        num_in_masks = int((percent_in_masks / 100) * self.width * self.height) 
+        for n in range(num_in_masks):
+            # Choose a random x, y coordinate and make that person wear a mask
+            # NOTE: This might select the same person twice...
+            i = randint(self.width)
+            j = randint(self.height)
+            if self.state[i, j] == self.INFECTED_NO_MASK:
+                self.state[i, j] = self.INFECTED_WITH_MASK
+            elif self.state[i, j] == self.SUSCEPTIBLE_NO_MASK:
+                self.state[i, j] = self.SUSCEPTIBLE_WITH_MASK
 
     def update(self):
         """Advance the simulation by one day"""
@@ -262,39 +289,71 @@ class Simulation:
         """Compute new status for person at i, j in the grid"""
         status = state[i, j]
 
-        # Update infected person
-        if status == self.INFECTED:
+        # Update infected person with no mask
+        if status == self.INFECTED_NO_MASK:
+            if self.recovery_probability > random():
+                return self.RECOVERED
+            elif self.death_probability > random():
+                return self.DEAD
+    
+        # Update infected person wearing a mask
+        if status == self.INFECTED_WITH_MASK:
             if self.recovery_probability > random():
                 return self.RECOVERED
             elif self.death_probability > random():
                 return self.DEAD
 
-        # Update susceptible person
-        elif status == self.SUSCEPTIBLE:
-            num = self.num_infected_around(state, i, j)
-            if num * self.infection_probability > random():
-                return self.INFECTED
+        # Update susceptible person with no mask
+        elif status == self.SUSCEPTIBLE_NO_MASK:
+            num_no_mask = self.num_infected_no_mask_around(state, i, j)
+            num_with_mask = self.num_infected_with_mask_around(state, i, j)
+            if self.infection_probability_no_mask * num_no_mask + self.infection_probability_with_mask * num_with_mask> random():
+                return self.INFECTED_NO_MASK
 
+        # Update susceptible person wearing a mask
+        elif status == self.SUSCEPTIBLE_WITH_MASK:
+            num_no_mask = self.num_infected_no_mask_around(state, i, j)
+            num_with_mask = self.num_infected_with_mask_around(state, i, j)
+            if self.infection_probability_with_mask * (self.infection_probability_no_mask * num_no_mask + self.infection_probability_with_mask * num_with_mask)> random():
+                return self.INFECTED_WITH_MASK
+            
         # Return the old status (e.g. DEAD/RECOVERED)
         return status
 
-    def num_infected_around(self, state, i, j):
-        """Count the number of infected people around person i, j"""
-
+    def num_infected_no_mask_around(self, state, i, j):
+        """Count the number of infected people with no mask around person i, j"""
+        
         # Need to be careful about people at the edge of the grid.
         # ivals and jvals are the coordinates of neighbours around i, j
         ivals = range(max(i-1, 0), min(i+2, self.width))
         jvals = range(max(j-1, 0), min(j+2, self.height))
-        number = 0
+        number_nm = 0
         for ip in ivals:
             for jp in jvals:
                 # Don't count self as a neighbour
                 if (ip, jp) != (i, j):
-                    if state[ip, jp] == self.INFECTED:
-                        number += 1
+                    if state[ip, jp] == self.INFECTED_NO_MASK:
+                        number_nm += 1
 
-        return number
+        return number_nm
 
+    def num_infected_with_mask_around(self, state, i, j): 
+        """Count the number of infected people with no mask around person i, j"""
+        
+        # Need to be careful about people at the edge of the grid.
+        # ivals and jvals are the coordinates of neighbours around i, j
+        ivals = range(max(i-1, 0), min(i+2, self.width))
+        jvals = range(max(j-1, 0), min(j+2, self.height))
+        number_wm = 0
+        for ip in ivals:
+            for jp in jvals:
+                # Don't count self as a neighbour
+                if (ip, jp) != (i, j):
+                    if state[ip, jp] == self.INFECTED_WITH_MASK:
+                        number_wm += 1
+
+        return number_wm
+    
     def get_percentage_status(self):
         """Dict giving percentage of people in each statue"""
 
