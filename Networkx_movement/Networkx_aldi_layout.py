@@ -28,3 +28,4 @@ def aldi_layout():
     pos = dict(zip(G,G))
     nx.draw(G,pos,with_labels=True)
     return G
+
