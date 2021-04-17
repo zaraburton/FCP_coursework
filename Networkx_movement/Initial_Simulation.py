@@ -25,7 +25,8 @@ cords = np.zeros((8,7))
 # More columns can be added with other parameters
 covid_exposure = np.zeros((2,2))
 
-
+#setting initial defaul parametre for time
+time = 20
 
 # Have different function for different types of shoppers
 # i.e. long shoppers have lower probability of skipping nodes
