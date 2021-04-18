@@ -47,7 +47,7 @@ def path_entrance_to_till(G,n1,n2):
 
 paths1 = path_entrance_to_till(G, (10,0),(4,0))
 paths2 = path_entrance_to_till(G, (10,0),(1,0))
-
+print(paths1)
 #function to enable plotting of the shortest path in BLUE
 def node_colors(G, path):
     colours = []
