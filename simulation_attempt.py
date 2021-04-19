@@ -7,7 +7,7 @@
 import simpy
 import random
 import statistics
-import Networkx as nx
+import networkx as nx
 import Networkx random path generation.py
 
 time_in_shop = []
@@ -40,16 +40,16 @@ class Aldi(object):
         self.env = env
         self.G = G.copy()
         self.path = simpy.Resource(env, path_chosen) # the path taken defines what's in the shopper's 'basket'
-        self.buy = simpy.Resource(env, num_cashiers) # buying time is determined by the number of cashiers avaailable
-        self.pack = simpy.Resource(env, num_items) 
-        
+        self.pack = simpy.Resource(env, num_items)   # time taken to pack is based on the number of items a customer has.
+        self.customers_at_nodes = {node: [] for node in self.G} # creates a dictionary with an empty list of nodes in the graph
+            
         
         
     def take_path(self, shopper): # the path that the shopper chooses from the network
         yield self.env.timeout(path_chosen) # tells simpy to trigger this event after a certain time has passed, time could be weighting of the path?
         
     def purchase_items(self, shopper): # the process of buying items at the till
-        yield self.env.timeout(num_cashiers) 
+        yield self.env.timeout(SCAN_TIME * num_items) 
         
     def pack_items(self, shopper): # the process of packing items away
         yield self.env.timeout(PACK_TIME * num_items)
@@ -77,7 +77,15 @@ class Aldi(object):
     
 
     
-def shopper(env, infected: bool, Aldi, path_chosen)
+def shopper(env, infected: bool, Aldi, path_chosen)        # shopper defined based on whether or not they are infected and the path they chose
+
+def move_shopper(env, Aldi, path_chosen, start, end)
+    start = path_chosen[0]
+    end = path_chosen[end]
+        while pos < len(path_chosen)
+            pos = node in path_chosen
+            node =+ 1
+
 
 
 # the main process - making the simulation happen
