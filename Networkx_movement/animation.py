@@ -20,12 +20,6 @@ import Networkx_aldi_layout as lay
 # Import aldi layout for other file
 import Initial_Simulation as sim
 
-# pulling graph from aldi_layout
-G = lay.aldi_layout()
-
-# default time
-time_step = 1
-
 class NetworkAnimation:
     ''' Animate networkX showing movement of people'''
     def __init__(self,axes,sim):

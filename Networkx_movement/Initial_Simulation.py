@@ -108,11 +108,26 @@ person_1 = person((0,0), 1)
 # Inline way of moving person one step through path
 person_1.move_path()
 
+
 person_2 = person((0,0), 2)
 person_2.move_path()
 
 
+######Doesnt work right now, trying to get the position to update with iterations of t (time)
+t = 20
 
+person_1_journey = []
 
+while person_1_position
+    if person_1_position < (7,7):
+
+person_1_position = (x,y)
+person_1_position = person_1.pos
+if  x < 7 and y <7:
+        person_1.move_path()
+        person_1_journey = person_1_journey.append(cords)
+        person_1_position = person_1.pos
+    if person_1_position == (7,6):
+        break
 
         
