@@ -104,30 +104,29 @@ class person:
 
 # Inline way of creating people in the simulation
 person_1 = person((0,0), 1)
-
-# Inline way of moving person one step through path
-person_1.move_path()
-
-
-person_2 = person((0,0), 2)
-person_2.move_path()
+#person_2 = person((0,0), 2)
+#person_2.move_path()
 
 
+# HS experimenting with for loop to call move path
 ######Doesnt work right now, trying to get the position to update with iterations of t (time)
-t = 20
-
+person_1_path =  person_1.path
 person_1_journey = []
-
-while person_1_position
-    if person_1_position < (7,7):
-
-person_1_position = (x,y)
+person_1_position_list =[]
 person_1_position = person_1.pos
-if  x < 7 and y <7:
-        person_1.move_path()
-        person_1_journey = person_1_journey.append(cords)
-        person_1_position = person_1.pos
+
+
+# for loop to run for length of persons path and append their journey to a list of co-ords of their path through the shop
+
+for i in range(len(person_1_path)): # look through elements in the path of the person
+    while person_1_position[0] >= 0: # while the x axis co-ord is greater or equal to zero
+        person_1_journey.append(cords)  # append position to a list of co-ord arrays showing journey
+        #person_1_position = person_1.pos # update person 1 position
+        #person_1_n = person_1.n
+        person_1.move_path()   # move the person
+        #person_1_position_list.append(person_1_position)
     if person_1_position == (7,6):
         break
 
-        
+
+
