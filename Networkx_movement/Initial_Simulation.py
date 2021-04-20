@@ -86,14 +86,14 @@ class person:
         # Basically we don't want to have any chance of skipping the exit node
         if self.n == len(self.path) - 1:
             cords[(self.pos)] -= 1
-            self.pos = self.path[self.n]
+            self.pos = self.path[self.n-2]
             cords[(self.pos)] += 1
             self.n += 1
         
         # If statement actives when you reach the exit node    
         if self.n == len(self.path):
             cords[(self.pos)] -= 1
-            self.pos = self.path[self.n]
+            self.pos = self.path[self.n-1]
             cords[(self.pos)] += 1
             self.n += 1
             # Way of moving person from active array to storage (could be live counter for how many people have been in shop)
@@ -116,17 +116,14 @@ person_1_position_list =[]
 person_1_position = person_1.pos
 
 
-# for loop to run for length of persons path and append their journey to a list of co-ords of their path through the shop
+# for loop to run for persons path and append their journey to a list of co-ords of their path through the shop
+# need to make it a fuction
 
-for i in range(len(person_1_path)): # look through elements in the path of the person
-    while person_1_position[0] >= 0: # while the x axis co-ord is greater or equal to zero
-        person_1_journey.append(cords)  # append position to a list of co-ord arrays showing journey
-        #person_1_position = person_1.pos # update person 1 position
-        #person_1_n = person_1.n
-        person_1.move_path()   # move the person
-        #person_1_position_list.append(person_1_position)
-    if person_1_position == (7,6):
+while person_1_position[0] >= 0: # while the x axis co-ord is greater or equal to zero
+    person_1_journey.append(cords)  # append position to a list of co-ord arrays showing journey
+    #person_1_position_list.append(person_1_position)
+    person_1.move_path()   # move the person
+    person_1_position = person_1.pos # update person 1 position
+    if person_1_position == (7, 6):
         break
-
-
 
