@@ -115,15 +115,15 @@ person_1_journey = []
 person_1_position_list =[]
 person_1_position = person_1.pos
 
-
 # for loop to run for persons path and append their journey to a list of co-ords of their path through the shop
 # need to make it a fuction
 
-while person_1_position[0] >= 0: # while the x axis co-ord is greater or equal to zero
-    person_1_journey.append(cords)  # append position to a list of co-ord arrays showing journey
-    #person_1_position_list.append(person_1_position)
-    person_1.move_path()   # move the person
-    person_1_position = person_1.pos # update person 1 position
-    if person_1_position == (7, 6):
-        break
+for i in person_1_path:
+    while i != (7,6): # while the x axis co-ord is greater or equal to zero
+        person_1.move_path()   # move the person
+        person_1_journey.append(cords)     #person_1_position_list.append(person_1_position)
+        person_1_position = person_1.pos # update person 1 position
+        if person_1_position == (7, 6):
+            break
 
+print(person_1_journey)
