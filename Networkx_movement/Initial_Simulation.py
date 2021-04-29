@@ -120,8 +120,9 @@ person_1_position = person_1.pos
 
 for i in person_1_path:
     while i != (7,6): # while the x axis co-ord is greater or equal to zero
-        person_1.move_path()   # move the person
-        person_1_journey.append(cords)     #person_1_position_list.append(person_1_position)
+        person_1.move_path() # move the person
+        person_1_cord = cords
+        person_1_journey.append(person_1_cord)     #person_1_position_list.append(person_1_position)
         person_1_position = person_1.pos # update person 1 position
         if person_1_position == (7, 6):
             break

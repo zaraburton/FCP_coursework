@@ -14,7 +14,17 @@ time_in_shop = []
 SCAN_TIME = 12/60 # let's say it takes 12 seconds to scan each 'item'
 PACK_TIME = 1/60 # let's say it takes 1 second to pack each 'item'
 
+# create an environment object to manage the simulation time and move the simulation through time steps
 env = simpy.Environment()
+
+# next we need to pass in the variables that will act as paramaters.
+# parameters are the things we vary to see how the systems changes (people in the space)
+# env: the environment object to schedule the process of events
+# shoppers : the list of shoppers in the shop and where they are in space
+# shopper_arrival : rate at which shoppers arrive
+
+
+
 
 G = nx.grid_2d_graph(8,7)
 
@@ -73,6 +83,8 @@ class Aldi(object):
         
         
     # shopper leaves Aldi
+    #adding list to contain the total amount of time each shopper is in the shop
+    time_in_shop = []
     time_in_shop.append(env.now - arrival_time)
     
 
