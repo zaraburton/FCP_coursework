@@ -14,22 +14,22 @@ import Networkx_aldi_layout as lay
 
 
 def main(args):
-
+#changing the argument input to allow the command line to ask the user to input
+    max_entry , duration = get_user_input()
     #using argpas to handing parsing command line arguments
-    parser = argparse.ArgumentParser(description='Animate an epidemic')   
-    parser.add_argument('--max_entry', metavar='N', type=int, default=4,
-                        help='Maximum of N people can enter at once')
-    parser.add_argument('--duration', metavar='N', type=int, default=100,
-                        help='Run simulation for N time steps')
-    args = parser.parse_args(args)
-
+    #parser = argparse.ArgumentParser(description='Animate an epidemic')
+    #parser.add_argument('--max_entry', metavar='N', type=int, default=4,
+    #                    help='Maximum of N people can enter at once')
+    #parser.add_argument('--duration', metavar='N', type=int, default=100,
+    #                    help='Run simulation for N time steps')
+    #args = parser.parse_args(args)
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration)
+    sim = simulation(max_entry, duration)
     #starts out with 1 shopper 
     sim.add_new_shopper()
 
-    results(sim, args.duration)
+    results(sim, duration)
 
 
 #----------------------------------------------------------------------------#
@@ -211,6 +211,21 @@ def results(simulation, duration):
 
     print("Out of those,", percentage_initially_infected, "% entered the shop infected")
     print("Out of those initially suseptible", percentage_who_caught_covid, "% caught covid")
+
+#function for getting user input
+def get_user_input():
+    entry = input("Maximum number of people who can enter the shop at once: ")
+    duration = input("Number of time steps to run the simulation for: ")
+    params = [entry, duration]
+    if all(str(i).isdigit() for i in params):  # Check input is valid
+        params = [int(x) for x in params]
+    else:
+        print(
+            "Could not parse input. The simulation will use default values:",
+            "\n10 people max entry at one time and the simulation will run for 120 time steps.",
+        )
+        params = [10, 120]
+    return params
 
 
 
