@@ -27,6 +27,13 @@ def possible_paths(G, ent, ext):
         paths.append(i)
     return(paths)
 
+def shortest_paths(G,ent,ext):
+    shortest_paths = []
+    for i in nx.all_shortest_paths(G,source = ent,target = ext):
+        shortest_paths.append(i)
+    return(shortest_paths)
+
+
 #  TO DO: Add input sanitisation for function
 
 #-----------------------------------------------------------------------------
