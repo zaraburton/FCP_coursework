@@ -46,7 +46,7 @@ class simulation:
     def __init__(self, entry, duration):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
-        self.duration = duration  
+        self.duration = duration
         self.time_step = 0
 
 
@@ -72,9 +72,11 @@ class simulation:
         #in the area" and adds them to the list of shoppers 
         level_of_covid_in_area = 0.3
         if level_of_covid_in_area > random():
-            simulation.shoppers.append(person((0,0),1))
+            speed = randint(0, 1) # randomly assigning speed to the person appended
+            simulation.shoppers.append(person((0,0),1,speed))
         else:
-            simulation.shoppers.append(person((0,0),0))
+            speed = randint(0, 1) # randomly assigns speed to the person appended
+            simulation.shoppers.append(person((0,0),0,speed))
 
 
 #----------------------------------------------------------------------------#
@@ -90,22 +92,27 @@ class person:
     cords = np.zeros((3,8,7))
 
     # all possible paths that could be taken by a person through the shop
-    paths = path_gen.possible_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])               
+    paths = path_gen.possible_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
+    slow_paths = path_gen.slow_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
+    fast_paths = path_gen.fast_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
 
-
-    # Setting initial varibles for each person 
+    # Setting initial varibles for each person
     # Add all variables for each person here
-    def __init__(self, pos, covid_status):
+    def __init__(self, pos, covid_status,speed):
         self.pos = pos            # Position in network
         self.n = 0                # current step in path (0 is the entrance of the shop)
         self.SIR_level = covid_status     #their SIR level (0=suseptible 1=infected 2=removed)
-        
 
-        #piacking a random number to select random path for the person
-        rand_int = randint(0, len(person.paths))                       
-        self.path = person.paths[rand_int]                  
-        
-        #status is their path and covid status in one thats used in the cords array
+        self.speed = speed
+
+        if speed == 0: # if random assignment of speed is zero then person with long path
+            rand_int = randint(0, len(person.slow_paths))
+            self.path = person.paths[rand_int]
+        elif speed == 1: # if random assignment of speed is 1 then person has a quick path
+            rand_int = randint(0, len(person.fast_paths))
+            self.path = person.fast_paths[rand_int]
+
+            #status is their path and covid status in one thats used in the cords array
         #eg path of [(0,0), (0,1), (0,2)] for an infected person becomes
         # a status of [(1,0,0), (1,0,1), (1,0,2)]
         #the for loop takes each element in the paths list, turns it from a tuple to a list to edit it,
@@ -185,7 +192,7 @@ def results(simulation, duration):
 
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration: 
-        # print(person.cords) 
+        # print(person.cords)
         # uncomment this^^^ too see how people move through the shop in the cords array
         simulation.update()
 
