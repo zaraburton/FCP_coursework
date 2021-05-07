@@ -20,18 +20,29 @@ import random
 # Outputs:
     # paths = List of all possible paths
 
+#list of all possible paths in shop
 def possible_paths(G, ent, ext):
     paths = []
-    
-    for i in nx.all_simple_paths(G, source =ent, target = ext):
+    for i in nx.all_simple_paths(G,source = ent,target = ext):
         paths.append(i)
     return(paths)
 
-def shortest_paths(G,ent,ext):
-    shortest_paths = []
-    for i in nx.all_shortest_paths(G,source = ent,target = ext):
-        shortest_paths.append(i)
-    return(shortest_paths)
+
+#list of shortest paths in shop so for fast shoppers
+def fast_paths(G,ent,ext):
+    short_paths = []
+    for i in nx.all_simple_paths(G,source = ent,target = ext):
+        if len(i) <= 12:
+            continue
+        short_paths.append(i)
+    return(short_paths)
+
+def slow_paths(G,ent,ext):
+    long_paths = []
+    for i in nx.all_simple_paths(G,source = ent,target = ext):
+        if len(i) > 15:
+            long_paths.append(i)
+    return(long_paths)
 
 
 #  TO DO: Add input sanitisation for function
