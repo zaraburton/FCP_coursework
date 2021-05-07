@@ -40,7 +40,7 @@ def fast_paths(G,ent,ext):
 def slow_paths(G,ent,ext):
     long_paths = []
     for i in nx.all_simple_paths(G,source = ent,target = ext):
-        if len(i) > 15:
+        if len(i) > 13:
             long_paths.append(i)
     return(long_paths)
 

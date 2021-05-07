@@ -102,7 +102,6 @@ class person:
         self.pos = pos            # Position in network
         self.n = 0                # current step in path (0 is the entrance of the shop)
         self.SIR_level = covid_status     #their SIR level (0=suseptible 1=infected 2=removed)
-
         self.speed = speed
 
         if speed == 0: # if random assignment of speed is zero then person with long path
