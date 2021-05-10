@@ -55,7 +55,7 @@ class simulation:
     def update(self): 
         """advances the simulation by 1 time step"""
         # for all people in the shop, update them 
-        #(uses the update_shopper function in person class)
+        #(uses the move_path and new_SIR_level functions in person class)
         for i in simulation.shoppers:
             #move every shopper to the next step in their path
             i.move_path()
@@ -143,13 +143,6 @@ class person:
         #setting the persons position in the cords array 
         self.pos = self.status[0] 
         person.cords[(self.pos)] += 1
-
-    
-    def update_shopper(self):
-        """moves a person, then calculates their SIR level"""
-        #this is whats called by the simulation class
-        self.move_path()
-        self.new_SIR_level()
 
 
     def move_path(self):
