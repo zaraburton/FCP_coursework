@@ -15,7 +15,7 @@ import Networkx_aldi_layout as lay
 
 def main(args):
 #changing the argument input to allow the command line to ask the user to input
-    max_entry , duration = get_user_input()
+    max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     #parser = argparse.ArgumentParser(description='Animate an epidemic')
     #parser.add_argument('--max_entry', metavar='N', type=int, default=4,
@@ -25,7 +25,7 @@ def main(args):
     #args = parser.parse_args(args)
 
     #setting up simulation
-    sim = simulation(max_entry, duration)
+    sim = simulation(max_entry, duration, max_shoppers)
     #starts out with 1 shopper 
     sim.add_new_shopper()
 
@@ -43,11 +43,13 @@ class simulation:
     #vector what contains instance of each person currently in the shop
     shoppers = []
     
-    def __init__(self, entry, duration):
+    def __init__(self, entry, duration, max_shoppers):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
         self.time_step = 0
+        self.max_shoppers = max_shoppers
+
 
 
     def update(self): 
@@ -55,10 +57,25 @@ class simulation:
         # for all people in the shop, update them 
         #(uses the update_shopper function in person class)
         for i in simulation.shoppers:
-            i.update_shopper()
+            #move every shopper to the next step in their path
+            i.move_path()
+        for i in simulation.shoppers:
+        	#assign new SIR level to every shopper based on everyone new position
+            i.new_SIR_level()
         
-        # randomly picking number of new people to enter the shop
-        number_of_shoppers_entering = randint(0, self.max_entry)
+
+        # finding the number of people who can enter the shop in this time step
+        if len(simulation.shoppers) < self.max_shoppers - self.max_entry:
+            number_of_shoppers_entering = randint(0, self.max_entry)
+		    # randomly picking number of new people to enter the shop
+		   # number_of_shoppers_entering = randint(0, self.max_entry)
+
+        elif len(simulation.shoppers) < self.max_shoppers:
+			# max number of people that can enter
+            max_entry_to_meet_capacity = self.max_shoppers - len(simulation.shoppers)
+			# randomly picking number of new people to enter shop that wont go over maximum capacity
+            number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity)
+		# adding the new people to the shop  
         for j in range(number_of_shoppers_entering):
             self.add_new_shopper()
         
@@ -188,7 +205,6 @@ class person:
 def results(simulation, duration):  
     #this will probably be turned into the animation class 
 
-
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration: 
         # print(person.cords)
@@ -222,15 +238,16 @@ def results(simulation, duration):
 def get_user_input():
     entry = input("Maximum number of people who can enter the shop at once: ")
     duration = input("Number of time steps to run the simulation for: ")
-    params = [entry, duration]
+    max_shoppers = input("Maximum number of people allowed in the shop at once: ")
+    params = [entry, duration, max_shoppers]
     if all(str(i).isdigit() for i in params):  # Check input is valid
         params = [int(x) for x in params]
     else:
         print(
             "Could not parse input. The simulation will use default values:",
-            "\n10 people max entry at one time and the simulation will run for 120 time steps.",
+            "\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
         )
-        params = [10, 120]
+        params = [10, 120, 50]
     return params
 
 
