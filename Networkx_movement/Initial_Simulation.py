@@ -3,6 +3,7 @@ import argparse
 import numpy as np
 #import random as rd
 from numpy.random import random, randint
+from statistics import mean
 
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
@@ -42,6 +43,8 @@ class simulation:
     left_shop = []
     #vector what contains instance of each person currently in the shop
     shoppers = []
+    #vector to contain length of shopping time per person
+    shopping_time = []
     
     def __init__(self, entry, duration, max_shoppers):
         # Basic simulation perameters:
@@ -79,7 +82,7 @@ class simulation:
         for j in range(number_of_shoppers_entering):
             self.add_new_shopper()
         
-        #add one to the time step counter 
+        #add one to the time step counter and record the time step total
         self.time_step += 1
     
     def add_new_shopper(self):
@@ -121,6 +124,7 @@ class person:
         self.SIR_level = covid_status     #their SIR level (0=suseptible 1=infected 2=removed)
         self.speed = speed
 
+
         if speed == 0: # if random assignment of speed is zero then person with long path
             rand_int = randint(0, len(person.slow_paths))
             self.path = person.paths[rand_int]
@@ -128,6 +132,7 @@ class person:
             rand_int = randint(0, len(person.fast_paths))
             self.path = person.fast_paths[rand_int]
 
+        self.shop_time = len(self.path)
             #status is their path and covid status in one thats used in the cords array
         #eg path of [(0,0), (0,1), (0,2)] for an infected person becomes
         # a status of [(1,0,0), (1,0,1), (1,0,2)]
@@ -153,6 +158,8 @@ class person:
 
             #takes info from them
             leaving_info = self.SIR_level
+            shopping_time = self.shop_time
+            simulation.shopping_time.append(shopping_time)
             #and stores it in the left_shop array in the simulation class
             simulation.left_shop.append(leaving_info)
             #then remove them from the list of current shoppers 
@@ -208,7 +215,6 @@ def results(simulation, duration):
     num_left_shop = len(simulation.left_shop)   
     print("Number of people who've left the shop:", num_left_shop)
 
-
     # from those who've left the shop, count the number of them who entred with covid
     num_initially_infected = simulation.left_shop.count(1) 
     percentage_initially_infected = (num_initially_infected / num_left_shop)*100
@@ -223,9 +229,16 @@ def results(simulation, duration):
     num_initially_suseptible = num_not_infected + num_caught_covid
     # calculate % of people who entered the shop suseptile who left with covid
     percentage_who_caught_covid = (num_caught_covid / num_initially_suseptible)*100
+    #function to calculate average of a list
+    def Average(lst):
+        return mean(lst)
+    # calculated the avergage time in the shop
+    average_shop_time = Average(simulation.shopping_time)
 
     print("Out of those,", percentage_initially_infected, "% entered the shop infected")
     print("Out of those initially suseptible", percentage_who_caught_covid, "% caught covid")
+    print("Average time in shop", average_shop_time, "minutes in the shop")
+
 
 #function for getting user input
 def get_user_input():
