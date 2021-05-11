@@ -42,7 +42,12 @@ class simulation:
     left_shop = []
     #vector what contains instance of each person currently in the shop
     shoppers = []
-    
+ 
+    # probability of infection at each node in the shop
+    # level 0 is probability of infection for people wearing a mask
+    # level 1 is probability of infection for people without a mask
+    shop_infection_risk = np.zeros((2,8,7))
+
     def __init__(self, entry, duration, max_shoppers):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
@@ -54,46 +59,85 @@ class simulation:
 
     def update(self): 
         """advances the simulation by 1 time step"""
-        # for all people in the shop, update them 
-        #(uses the move_path and new_SIR_level functions in person class)
-        for i in simulation.shoppers:
-            #move every shopper to the next step in their path
-            i.move_path()
-        for i in simulation.shoppers:
-        	#assign new SIR level to every shopper based on everyone new position
-            i.new_SIR_level()
+        # for all people in the shop, move them, then calculate their new SIR level
+        [person.move_path() for person in simulation.shoppers]
+       
+        #update the infection risk matrix now that people have moved 
+        self.update_infection_risk()
+
+        #assign new SIR level to every shopper based on everyone new position
+        [person.new_SIR_level() for person in simulation.shoppers if person.SIR_level < 2]
         
 
         # finding the number of people who can enter the shop in this time step
         if len(simulation.shoppers) < self.max_shoppers - self.max_entry:
+            # randomly picking number of new people to enter the shop
             number_of_shoppers_entering = randint(0, self.max_entry)
-		    # randomly picking number of new people to enter the shop
-		   # number_of_shoppers_entering = randint(0, self.max_entry)
+
 
         elif len(simulation.shoppers) < self.max_shoppers:
-			# max number of people that can enter
+            # max number of people that can enter
             max_entry_to_meet_capacity = self.max_shoppers - len(simulation.shoppers)
-			# randomly picking number of new people to enter shop that wont go over maximum capacity
+            # randomly picking number of new people to enter shop that wont go over maximum capacity
             number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity)
-		# adding the new people to the shop  
+        # adding the new people to the shop  
         for j in range(number_of_shoppers_entering):
             self.add_new_shopper()
         
         #add one to the time step counter 
         self.time_step += 1
-    
+   
+
+    def update_infection_risk(self):
+        """updates matrix for risk of infection at each node in the shop"""
+        #number of infected people ate ach shop node w/ mask
+        i_w_mask = person.cords[2] # and again for 3 but without compensating for masks
+        #number of infected people ate ach shop node w/o mask
+        i_no_mask = person.cords[3]
+
+        prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
+        reduced_i_prob_w_mask = prob_of_i / 2 #chance of a person w/o mask catching covid from infected person w/ mask
+
+        prob_of_i_from_i_w_mask = reduced_i_prob_w_mask * i_w_mask 
+        prob_of_i_from_i_no_mask = prob_of_i * i_no_mask
+        
+        risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
+        risk_in_mask = risk_no_mask / 2
+
+        # create 2 layer array of risk 
+        simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
+
     def add_new_shopper(self):
         """adds new person the the shop"""
         #creates a new instance of a person thats either
         #suseptible or infected, based on the "level of covid
         #in the area" and adds them to the list of shoppers 
-        level_of_covid_in_area = 0.3
+        chance_person_wears_mask = 0.5
+        level_of_covid_in_area = 0.25
+        speed = randint(0, 1) # randomly assigning speed to the person appended
+
+        #add infected person
         if level_of_covid_in_area > random():
-            speed = randint(0, 1) # randomly assigning speed to the person appended
-            simulation.shoppers.append(person((0,0),1,speed))
+            if chance_person_wears_mask > random():
+                #add infected person with mask   
+                mask =  1    
+                simulation.shoppers.append(person((0,0),2,speed, mask))
+            else:
+                # add infected person without mask
+                mask = 0
+                simulation.shoppers.append(person((0,0),3,speed, mask))
+
+
+        #add suseptible person 
         else:
-            speed = randint(0, 1) # randomly assigns speed to the person appended
-            simulation.shoppers.append(person((0,0),0,speed))
+            if chance_person_wears_mask > random():
+                # add suseptible person w/ mask
+                mask = 1
+                simulation.shoppers.append(person((0,0),0,speed, mask))
+            else:
+                # add suseptible person w/o mask
+                mask = 0 
+                simulation.shoppers.append(person((0,0),1,speed, mask))
 
 
 #----------------------------------------------------------------------------#
@@ -102,24 +146,30 @@ class simulation:
 
 class person:
     # Array representing network for aldi layout
-    # it has 3 "levels" to it, each one is 8x7 where each element represents a shop node from the network x shop diagram
-    # in level 0: each element records the number of people at that node who are suseptible
-    # in level 1: each element records the number of people at that node who are infected
-    # in level 2: each element records the number of people at that node who have caught covid whilst shopping
-    cords = np.zeros((3,8,7))
+    # it has 5 "levels" to it, each one is 8x7 where each element represents a shop node from the network x shop diagram
+    # in level 0: each element records the number of people at that node who are suseptible wearing a mask
+    # in level 1: each element records the number of people at that node who are suseptible and not wearing a mask
+    # in level 2: each element records the number of people at that node who are infected & wearing a mask
+    # in level 3: each element records the number of people at that node infected and not wearing a mask
+    # in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
+    
+    cords = np.zeros((5,8,7))
 
     # all possible paths that could be taken by a person through the shop
     paths = path_gen.possible_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
     slow_paths = path_gen.slow_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
     fast_paths = path_gen.fast_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
 
+
     # Setting initial varibles for each person
     # Add all variables for each person here
-    def __init__(self, pos, covid_status,speed):
+    def __init__(self, pos, covid_status,speed, mask):
         self.pos = pos            # Position in network
         self.n = 0                # current step in path (0 is the entrance of the shop)
-        self.SIR_level = covid_status     #their SIR level (0=suseptible 1=infected 2=removed)
+        self.SIR_level = covid_status     #their SIR level (0=suseptible (w/m) 1= s (w/o m) 2= Infected (w/ mask) 3= infected (w/o mask) 4= removed)
         self.speed = speed
+        self.mask = mask # 1 = wearing mask, 0 = no mask
+
 
         if speed == 0: # if random assignment of speed is zero then person with long path
             rand_int = randint(0, len(person.slow_paths))
@@ -143,6 +193,7 @@ class person:
         #setting the persons position in the cords array 
         self.pos = self.status[0] 
         person.cords[(self.pos)] += 1
+
 
 
     def move_path(self):
@@ -172,16 +223,15 @@ class person:
 
     def new_SIR_level(self):
         """simulates people catching covid"""
-        probability_of_infection = 0.2 # this should be set as an input argument later
-        #calculate the number of infected people at the persons current position in the shop
-        number_of_infected_at_node = person.cords[1, self.pos[1], self.pos[2]]
-        #infect them if they are susceptible and there are infected people at their location
-        #should probably think of a more accurate way to do this later
-        if self.SIR_level == 0 and number_of_infected_at_node >= 1 and probability_of_infection > random():
-            #change their SIR level from 0 to 2 
-            self.SIR_level = 2 
+        # get the persons probability of infection based on the infection risk matrix
+        probability_of_infection = simulation.shop_infection_risk[self.pos]
+
+        if probability_of_infection > random(): 
+            #change their SIR level to 4 (removed)
+            self.SIR_level = 4 
             #now have to change their status for the cords array
             self.change_status()
+
 
     def change_status(self):
         """for every element in the status list, this changes the 1st element of the tuple from 0 to 2"""
@@ -200,7 +250,7 @@ def results(simulation, duration):
 
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration: 
-        # print(person.cords)
+        #print(person.cords)
         # uncomment this^^^ too see how people move through the shop in the cords array
         simulation.update()
 
@@ -210,15 +260,15 @@ def results(simulation, duration):
 
 
     # from those who've left the shop, count the number of them who entred with covid
-    num_initially_infected = simulation.left_shop.count(1) 
+    num_initially_infected = simulation.left_shop.count(2) + simulation.left_shop.count(3)
     percentage_initially_infected = (num_initially_infected / num_left_shop)*100
     # ^^ this will mess up if no ones left the shop
     # need to set minimum for duration argument or find work around
 
     # number of people who left suseptible (didn't catch covid)
-    num_not_infected = simulation.left_shop.count(0)
+    num_not_infected = simulation.left_shop.count(0) + simulation.left_shop.count(1)
     # number of people who left that caught covid while shopping
-    num_caught_covid = simulation.left_shop.count(2)
+    num_caught_covid = simulation.left_shop.count(4)
     # number of people who've left that were initially suseptible
     num_initially_suseptible = num_not_infected + num_caught_covid
     # calculate % of people who entered the shop suseptile who left with covid
@@ -227,20 +277,25 @@ def results(simulation, duration):
     print("Out of those,", percentage_initially_infected, "% entered the shop infected")
     print("Out of those initially suseptible", percentage_who_caught_covid, "% caught covid")
 
+    
+    
+    
 #function for getting user input
 def get_user_input():
     entry = input("Maximum number of people who can enter the shop at once: ")
     duration = input("Number of time steps to run the simulation for: ")
     max_shoppers = input("Maximum number of people allowed in the shop at once: ")
+    #prob_infection = input("Probability of catching covid when within 2m of someone infected: ")
     params = [entry, duration, max_shoppers]
     if all(str(i).isdigit() for i in params):  # Check input is valid
         params = [int(x) for x in params]
     else:
         print(
             "Could not parse input. The simulation will use default values:",
-            "\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
+            "\n10 people max entry at one time, 70 people max in the shop at one time, and the simulation will run for 200 time steps.",
+            #"\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
         )
-        params = [10, 120, 50]
+        params = [10, 120, 50] 
     return params
 
 
@@ -249,5 +304,6 @@ if __name__ == "__main__":
 
     import sys
     main(sys.argv[1:])
+
 
 
