@@ -14,7 +14,7 @@ import Networkx_random_path_example as path_gen
 import Networkx_aldi_layout as lay
 
 
-def main(args):
+def main(*args):
 #changing the argument input to allow the command line to ask the user to input
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
@@ -110,9 +110,13 @@ class simulation:
 
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
         risk_in_mask = risk_no_mask / 2
-
-        positions = person.cords[0]
-        simulation.positions = positions
+        # capturing the state of the shop nodes for animation
+        sus_no_mask = person.cords[0]
+        sus_mask = person.cords[1]
+        inf_mas = person.cords[2]
+        inf_no_mask = person.cords[3]
+        simulation.susceptible = sus_no_mask + sus_mask
+        simulation.infected = -10*inf_mas + -10*inf_no_mask
 
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
@@ -333,7 +337,6 @@ class Animation:
     def __init__(self, simulation, duration):
         self.simulation = simulation
         self.duration = duration
-
         self.figure = plt.figure(figsize=(8, 4))
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
         self.axes_line = self.figure.add_subplot(1, 2, 2)
@@ -345,6 +348,7 @@ class Animation:
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
                 init_func = self.init, blit=True, interval=200)
         plt.show()
+
 
 
     def init(self):
@@ -369,8 +373,10 @@ class GridAnimation:
     def __init__(self, axes, simulation):
         self.axes = axes
         self.simulation = simulation
-        rgb_matrix = self.simulation.positions
-        self.image = self.axes.imshow(rgb_matrix)
+        susceptible = self.simulation.susceptible
+        infected = self.simulation.infected
+        shop = infected+susceptible
+        self.image = self.axes.imshow(shop, cmap='coolwarm')
         self.axes.set_xticks([])
         self.axes.set_yticks([])
 
@@ -379,15 +385,17 @@ class GridAnimation:
 
     def update(self, framenum):
         day = framenum
-        rgb_matrix = self.simulation.positions
-        self.image.set_array(rgb_matrix)
+        susceptible = self.simulation.susceptible
+        infected = self.simulation.infected
+        shop = infected+susceptible
+        self.image.set_array(shop)
         return [self.image]
 
 
 if __name__ == "__main__":
 
     import sys
-    main(sys.argv[1:])
+    main(*sys.argv[1:])
 
 
 
