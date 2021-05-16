@@ -16,22 +16,25 @@ import Networkx_aldi_layout as lay
 
 def main(args):
 #changing the argument input to allow the command line to ask the user to input
-    max_entry , duration , max_shoppers = get_user_input()
+    #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
-    #parser = argparse.ArgumentParser(description='Animate an epidemic')
-    #parser.add_argument('--max_entry', metavar='N', type=int, default=4,
-    #                    help='Maximum of N people can enter at once')
-    #parser.add_argument('--duration', metavar='N', type=int, default=100,
-    #                    help='Run simulation for N time steps')
-    #args = parser.parse_args(args)
+    parser = argparse.ArgumentParser(description='Animate an epidemic')
+    parser.add_argument('--max_entry', metavar='N', type=int, default=4,
+                        help='Maximum of N people can enter at once')
+    parser.add_argument('--duration', metavar='N', type=int, default=100,
+                        help='Run simulation for N time steps')
+    parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
+                    help='Maximum number of shoppers in the shop')
+    args = parser.parse_args(args)
 
     #setting up simulation
-    sim = simulation(max_entry, duration, max_shoppers)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers)
     #starts out with 1 shopper 
     sim.add_new_shopper()
+    results(sim, args.duration)
 
-    results(sim, duration)
-
+    animation = Animation(sim,args.duration)
+    animation.show()
 
 #----------------------------------------------------------------------------#
 #                  Simulation class                                          #
@@ -108,6 +111,9 @@ class simulation:
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
         risk_in_mask = risk_no_mask / 2
 
+        positions = person.cords[0]
+        simulation.positions = positions
+
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
 
@@ -142,7 +148,17 @@ class simulation:
                 # add suseptible person w/o mask
                 mask = 0
                 simulation.shoppers.append(person((0,0),1,speed, mask))
+##### getting the cords position array
+    def get_rgb_matrix(self):
+        """RGB matrix representing the statuses of the people in the grid
 
+            his represents the state as an RGB (colour) matrix using the
+            coloursceheme set in the class variables COLOURMAP and COLOURMAP_RGB.
+            The resulting matrix is suitable to be used with e.g. matplotlib's
+            imshow function.
+                    """
+        rgb_matrix = person.cords[0]
+        return rgb_matrix
 
 #----------------------------------------------------------------------------#
 #                  Person class                                              #
@@ -257,8 +273,8 @@ def results(simulation, duration):
     #this will probably be turned into the animation class 
 
     #run the simulation for as many time steps as the duration 
-    while simulation.time_step < duration: 
-        #print(person.cords)
+    while simulation.time_step < duration:
+        rgb_matrix = person.cords[0]
         # uncomment this^^^ too see how people move through the shop in the cords array
         simulation.update()
 
@@ -294,6 +310,7 @@ def results(simulation, duration):
 
 
 
+
 #function for getting user input
 def get_user_input():
     entry = input("Maximum number of people who can enter the shop at once: ")
@@ -312,6 +329,59 @@ def get_user_input():
         params = [10, 120, 50]
     return params
 
+class Animation:
+    def __init__(self, simulation, duration):
+        self.simulation = simulation
+        self.duration = duration
+
+        self.figure = plt.figure(figsize=(8, 4))
+        self.axes_grid = self.figure.add_subplot(1, 2, 1)
+        self.axes_line = self.figure.add_subplot(1, 2, 2)
+
+        self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
+
+    def show(self):
+        """Run the animation on screen"""
+        animation = FuncAnimation(self.figure, self.update, frames=range(100),
+                init_func = self.init, blit=True, interval=200)
+        plt.show()
+
+
+    def init(self):
+        """Initialise the animation (called by FuncAnimation)"""
+        # We could generalise this to a loop and then it would work for any
+        # numer of *animation objects.
+        actors = []
+        actors += self.gridanimation.init()
+        return actors
+
+    def update(self, time_step):
+        """Update the animation (called by FuncAnimation)"""
+        self.simulation.update()
+        actors = []
+        actors += self.gridanimation.update(time_step)
+        return actors
+
+
+class GridAnimation:
+    """Animate a grid showing status of people at each position"""
+
+    def __init__(self, axes, simulation):
+        self.axes = axes
+        self.simulation = simulation
+        rgb_matrix = self.simulation.positions
+        self.image = self.axes.imshow(rgb_matrix)
+        self.axes.set_xticks([])
+        self.axes.set_yticks([])
+
+    def init(self):
+        return self.update(0)
+
+    def update(self, framenum):
+        day = framenum
+        rgb_matrix = self.simulation.positions
+        self.image.set_array(rgb_matrix)
+        return [self.image]
 
 
 if __name__ == "__main__":
