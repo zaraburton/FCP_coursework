@@ -20,23 +20,24 @@ def main(*args):
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     parser = argparse.ArgumentParser(description='Animate an epidemic')
-    parser.add_argument('--max_entry', metavar='N', type=int, default=4,
+    parser.add_argument('--max_entry', metavar='N', type=int, default=2,
                         help='Maximum of N people can enter at once')
     parser.add_argument('--duration', metavar='N', type=int, default=100,
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
                     help='Maximum number of shoppers in the shop')
-    parser.add_argument('--month', metavar='N', type=int, default=1120,
+    parser.add_argument('--month', metavar='N', type=int, default=1020,
                     help='The month to use to represent the infection rate')
+    parser.add_argument('--path_system', metavar='N', type=int, default=2,
+                    help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
     args = parser.parse_args(args)
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system)
     #starts out with 1 shopper 
     sim.add_new_shopper()
     results(sim, args.duration)
-
-    animation = Animation(sim,args.duration)
+    animation = Animation(sim, args.duration)
     animation.show()
 
 #----------------------------------------------------------------------------#
@@ -50,6 +51,9 @@ class simulation:
     #vector what contains instance of each person currently in the shop
     shoppers = []
 
+    #vector to count number of people who are in shop
+    shopping_count = []
+
     # probability of infection at each node in the shop
     # level 0 is probability of infection for people wearing a mask
     # level 1 is probability of infection for people without a mask
@@ -58,13 +62,14 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers,month):
+    def __init__(self, entry, duration, max_shoppers,month,path_system):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
         self.time_step = 0
         self.max_shoppers = max_shoppers
         self.month = month
+        self.path_system = path_system
 
 
 
@@ -121,6 +126,7 @@ class simulation:
         inf_no_mask = person.cords[3]
         simulation.susceptible = sus_no_mask + sus_mask
         simulation.infected = -10*inf_mas + -10*inf_no_mask
+        shopping_count = len(simulation.shoppers)
 
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
@@ -132,7 +138,12 @@ class simulation:
         #in the area" and adds them to the list of shoppers 
         chance_person_wears_mask = 0.5
         level_of_covid_in_area = inf_rate.infection_rate(self.month)
-        speed = randint(0, 1) # randomly assigning speed to the person appended
+
+        if self.path_system == 2: # when user has specified 1 way simulation
+            speed = 2 # assign one way paths
+        else:  # when all paths available
+            speed = randint(0,2) # assign speed to people randomly
+
 
         #add infected person
         if level_of_covid_in_area > random():
@@ -176,7 +187,7 @@ class person:
     paths = path_gen.possible_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
     slow_paths = path_gen.slow_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
     fast_paths = path_gen.fast_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
-
+    one_way_paths = path_gen.possible_paths_oneway(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
 
     # Setting initial varibles for each person
     # Add all variables for each person here
@@ -195,6 +206,9 @@ class person:
         elif speed == 1: # if random assignment of speed is 1 then person has a quick path
             rand_int = randint(0, len(person.fast_paths))
             self.path = person.fast_paths[rand_int]
+        elif speed == 2: # if path system is one way
+            rand_int = randint(0 , len(person.one_way_paths))
+            self.path = person.one_way_paths[rand_int]
 
         self.shop_time = len(self.path)
             #status is their path and covid status in one thats used in the cords array
@@ -334,29 +348,30 @@ class Animation:
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
         self.axes_line = self.figure.add_subplot(1, 2, 2)
 
+
         self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
+        #self.lineanimation = LineAnimation(self.axes_line, self.simulation, self.duration)
 
     def show(self):
         """Run the animation on screen"""
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
-                init_func = self.init, blit=True, interval=200)
+                init_func = self.init, blit=True, interval=100, repeat=False)
         plt.show()
-
-
 
     def init(self):
         """Initialise the animation (called by FuncAnimation)"""
-        # We could generalise this to a loop and then it would work for any
         # numer of *animation objects.
         actors = []
         actors += self.gridanimation.init()
+        #actors += self.lineanimation.init()
         return actors
 
-    def update(self, time_step):
+    def update(self, framenumber):
         """Update the animation (called by FuncAnimation)"""
         self.simulation.update()
         actors = []
-        actors += self.gridanimation.update(time_step)
+        actors += self.gridanimation.update(framenumber)
+        #actors += self.lineanimation.update(framenumber)
         return actors
 
 
@@ -373,16 +388,45 @@ class GridAnimation:
         self.axes.set_xticks([])
         self.axes.set_yticks([])
 
+
     def init(self):
         return self.update(0)
 
     def update(self, framenum):
-        day = framenum
-        susceptible = self.simulation.susceptible
-        infected = self.simulation.infected
-        shop = infected+susceptible
-        self.image.set_array(shop)
-        return [self.image]
+            minute = framenum
+            susceptible = self.simulation.susceptible
+            infected = self.simulation.infected
+            shop = infected+susceptible
+            self.image.set_array(shop)
+            return [self.image]
+
+
+class LineAnimation:
+    """Animate a line series showing numbers of people in each status"""
+
+    def __init__(self, axes, simulation, duration):
+        self.axes = axes
+        self.simulation = simulation
+        self.duration = duration
+        self.shopping_no = []
+        self.time = []
+        self.line = 0
+        self.axes.plot(self.simulation.time_step, linewidth=2)
+
+
+    def init(self):
+        self.axes.set_xlim([0, self.duration])
+        self.axes.set_ylim([0, 20])
+        return []
+
+    def update(self,framenum):
+        #framenum = self.simulation.time_step
+        #self.shopping_no.append(self.simulation.shopping_time)
+        #self.time.append(self.simulation.time_step)
+        #self.line = self.line.set_data(self.shopping_no,self.time)
+        self.axes.plot(self.simulation.time_step)
+        return self.axes
+
 
 
 if __name__ == "__main__":

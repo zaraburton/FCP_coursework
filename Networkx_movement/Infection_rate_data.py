@@ -10,7 +10,6 @@ infection_rates = df.groupby(pd.PeriodIndex(df['date'], freq="M"))['newCasesBySp
 infection_rates = infection_rates / 300
 #converting to a numpy array
 infection_rates = infection_rates.to_numpy()
-
 # function to be called in simulation to pull out the relevent infection rate for the month the user can input
 def infection_rate(month):
     if month == 320:
