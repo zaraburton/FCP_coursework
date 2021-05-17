@@ -12,6 +12,7 @@ from matplotlib.animation import FuncAnimation
 import Networkx_random_path_example as path_gen
 # Import aldi layout for other file
 import Networkx_aldi_layout as lay
+import Infection_rate_data as inf_rate
 
 
 def main(*args):
@@ -25,10 +26,12 @@ def main(*args):
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
                     help='Maximum number of shoppers in the shop')
+    parser.add_argument('--month', metavar='N', type=int, default=1120,
+                    help='The month to use to represent the infection rate')
     args = parser.parse_args(args)
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month)
     #starts out with 1 shopper 
     sim.add_new_shopper()
     results(sim, args.duration)
@@ -55,12 +58,13 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers):
+    def __init__(self, entry, duration, max_shoppers,month):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
         self.time_step = 0
         self.max_shoppers = max_shoppers
+        self.month = month
 
 
 
@@ -127,7 +131,7 @@ class simulation:
         #suseptible or infected, based on the "level of covid
         #in the area" and adds them to the list of shoppers 
         chance_person_wears_mask = 0.5
-        level_of_covid_in_area = 0.25
+        level_of_covid_in_area = inf_rate.infection_rate(self.month)
         speed = randint(0, 1) # randomly assigning speed to the person appended
 
         #add infected person
@@ -152,17 +156,6 @@ class simulation:
                 # add suseptible person w/o mask
                 mask = 0
                 simulation.shoppers.append(person((0,0),1,speed, mask))
-##### getting the cords position array
-    def get_rgb_matrix(self):
-        """RGB matrix representing the statuses of the people in the grid
-
-            his represents the state as an RGB (colour) matrix using the
-            coloursceheme set in the class variables COLOURMAP and COLOURMAP_RGB.
-            The resulting matrix is suitable to be used with e.g. matplotlib's
-            imshow function.
-                    """
-        rgb_matrix = person.cords[0]
-        return rgb_matrix
 
 #----------------------------------------------------------------------------#
 #                  Person class                                              #
