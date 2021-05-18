@@ -2,12 +2,12 @@
 """
 Created on Sun Apr 11 15:33:34 2021
 
-@author: wills
+@author: wills & hannahs
 """
 
 import networkx as nx
 import random
-
+from itertools import chain, repeat
 
 
 #-----------------------------------------------------------------------------
@@ -40,8 +40,10 @@ def fast_paths(G,ent,ext):
 def slow_paths(G,ent,ext):
     long_paths = []
     for i in nx.all_simple_paths(G,source = ent,target = ext):
-        if len(i) > 13:
-            long_paths.append(i)
+        y = [2] * len(i)
+        chain.from_iterable((repeat(item, count) for item, count in zip(i, y)))
+        i = list(chain.from_iterable((repeat(item, cnt) for item, cnt in zip(i, y))))
+        long_paths.append(i)
     return(long_paths)
 
 
