@@ -26,6 +26,6 @@ def aldi_layout():
     
     # Drawing of example shop layout network
     pos = dict(zip(G,G))
-    nx.draw(G,pos,with_labels=True)
+    #nx.draw(G,pos,with_labels=True)
     return G
 
