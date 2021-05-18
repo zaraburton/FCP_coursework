@@ -351,9 +351,6 @@ def results(simulation, duration):
 
 
 
-
-
-
 #function for getting user input
 def get_user_input():
     entry = input("Maximum number of people who can enter the shop at once: ")
@@ -381,7 +378,7 @@ class Animation:
         self.axes_line = self.figure.add_subplot(1, 2, 2)
 
         self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
-
+        self.lineanimation = LineAnimation(self.axes_line, self.simulation)
     def show(self):
         """Run the animation on screen"""
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
@@ -443,12 +440,12 @@ class LineAnimation:
         self.axes.set_ylabel('number of people', rotation=0)
 
 
-    def init():
+    def init(self):
         self.ax.set_xlim(0, len(simulation.time_step_counter))
         self.ax.set_ylim(0, len(simulation.people_at_time_step))
         return self.ln,
 
-    def update(frame):
+    def update(self,frame):
         self.xdata.append(frame)
         self.ydata.append(frame)
         self.ln.set_data(xdata, ydata)
