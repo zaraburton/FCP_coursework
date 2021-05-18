@@ -28,7 +28,7 @@ def possible_paths(G, ent, ext):
     return(paths)
 
 
-#list of shortest paths in shop so for fast shoppers
+#list of shortest available paths in shop so for fast shoppers
 def fast_paths(G,ent,ext):
     short_paths = []
     for i in nx.all_simple_paths(G,source = ent,target = ext):

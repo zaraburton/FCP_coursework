@@ -26,7 +26,7 @@ def main(*args):
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
                     help='Maximum number of shoppers in the shop')
-    parser.add_argument('--month', metavar='N', type=int, default=1020,
+    parser.add_argument('--month', metavar='N', type=int, default=421,
                     help='The month to use to represent the infection rate')
     parser.add_argument('--path_system', metavar='N', type=int, default=2,
                     help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
@@ -124,9 +124,10 @@ class simulation:
         sus_mask = person.cords[1]
         inf_mas = person.cords[2]
         inf_no_mask = person.cords[3]
-        simulation.susceptible = sus_no_mask + sus_mask
-        simulation.infected = -10*inf_mas + -10*inf_no_mask
-        shopping_count = len(simulation.shoppers)
+        caught_covid = person.cords[4]
+        simulation.susceptible = (sus_no_mask + sus_mask) # counting susceptible people for animation
+        simulation.infected = (-inf_mas + -inf_no_mask + -caught_covid) # counting infected people as negative for visulisation in animation
+        simulation.shopping_count = len(simulation.shoppers)
 
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
@@ -139,10 +140,15 @@ class simulation:
         chance_person_wears_mask = 0.5
         level_of_covid_in_area = inf_rate.infection_rate(self.month)
 
+
         if self.path_system == 2: # when user has specified 1 way simulation
             speed = 2 # assign one way paths
-        else:  # when all paths available
-            speed = randint(0,2) # assign speed to people randomly
+        elif self.path_system == 1 :  # when all shoppers move quickly
+            speed = 1 # assign speed being quick
+        elif self.path_system == 0: # when all shoppers move slowly
+            speed = 0
+        elif self.path_system == 3: # when user has not specified a speed of shopper
+            speed = randint(0,1)  # assign shoppers slow and quick paths randomly
 
 
         #add infected person
@@ -195,18 +201,18 @@ class person:
         self.pos = pos            # Position in network
         self.n = 0                # current step in path (0 is the entrance of the shop)
         self.SIR_level = covid_status     #their SIR level (0=suseptible (w/m) 1= s (w/o m) 2= Infected (w/ mask) 3= infected (w/o mask) 4= removed)
-        self.speed = speed
+        self.speed = speed # 0 = slow walker 1 = quick walker 2 = one way path system
         self.mask = mask # 1 = wearing mask, 0 = no mask
 
 
 
-        if speed == 0: # if random assignment of speed is zero then person with long path
+        if self.speed == 0: # if assignment of speed is zero then person with slow path
             rand_int = randint(0, len(person.slow_paths))
             self.path = person.paths[rand_int]
-        elif speed == 1: # if random assignment of speed is 1 then person has a quick path
+        elif self.speed == 1: # if random assignment of speed is 1 then person has a quick path
             rand_int = randint(0, len(person.fast_paths))
             self.path = person.fast_paths[rand_int]
-        elif speed == 2: # if path system is one way
+        elif self.speed == 2: # if path system is one way
             rand_int = randint(0 , len(person.one_way_paths))
             self.path = person.one_way_paths[rand_int]
 
@@ -344,23 +350,22 @@ class Animation:
     def __init__(self, simulation, duration):
         self.simulation = simulation
         self.duration = duration
+
         self.figure = plt.figure(figsize=(8, 4))
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
         self.axes_line = self.figure.add_subplot(1, 2, 2)
 
-
         self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
-        #self.lineanimation = LineAnimation(self.axes_line, self.simulation, self.duration)
+        #self.lineanimation = LineAnimation(self.axes_line, self.simulation, duration)
 
     def show(self):
         """Run the animation on screen"""
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
-                init_func = self.init, blit=True, interval=100, repeat=False)
+                init_func = self.init, blit=True, interval=200)
         plt.show()
 
     def init(self):
         """Initialise the animation (called by FuncAnimation)"""
-        # numer of *animation objects.
         actors = []
         actors += self.gridanimation.init()
         #actors += self.lineanimation.init()
@@ -384,7 +389,7 @@ class GridAnimation:
         susceptible = self.simulation.susceptible
         infected = self.simulation.infected
         shop = infected+susceptible
-        self.image = self.axes.imshow(shop, cmap='coolwarm')
+        self.image = self.axes.imshow(shop, cmap='bwr')
         self.axes.set_xticks([])
         self.axes.set_yticks([])
 
@@ -408,24 +413,24 @@ class LineAnimation:
         self.axes = axes
         self.simulation = simulation
         self.duration = duration
-        self.shopping_no = []
         self.time = []
-        self.line = 0
-        self.axes.plot(self.simulation.time_step, linewidth=2)
-
+        self.shopping_no = []
+        self.axes.plot(self.shopping_no, linewidth=2)
+        #self.axes.set_xlabel('days')
+        #self.axes.set_ylabel('%', rotation=0)
 
     def init(self):
-        self.axes.set_xlim([0, self.duration])
-        self.axes.set_ylim([0, 20])
-        return []
+        #self.axes.set_xlim([0, self.duration])
+        #self.axes.set_ylim([0, 100])
+        return self.update(0)
 
     def update(self,framenum):
-        #framenum = self.simulation.time_step
-        #self.shopping_no.append(self.simulation.shopping_time)
-        #self.time.append(self.simulation.time_step)
-        #self.line = self.line.set_data(self.shopping_no,self.time)
-        self.axes.plot(self.simulation.time_step)
-        return self.axes
+        minute = framenum
+        self.shopping_no = []
+        no_shoppers = self.simulation.time_step
+        self.shopping_no.append(no_shoppers)
+        print(self.shopping_no)
+        return self.shopping_no
 
 
 
