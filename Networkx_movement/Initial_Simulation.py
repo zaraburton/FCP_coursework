@@ -26,9 +26,9 @@ def main(*args):
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
                     help='Maximum number of shoppers in the shop')
-    parser.add_argument('--month', metavar='N', type=int, default=421,
+    parser.add_argument('--month', metavar='N', type=int, default=1120,
                     help='The month to use to represent the infection rate')
-    parser.add_argument('--path_system', metavar='N', type=int, default=2,
+    parser.add_argument('--path_system', metavar='N', type=int, default=0,
                     help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
     args = parser.parse_args(args)
 
@@ -37,6 +37,7 @@ def main(*args):
     #starts out with 1 shopper 
     sim.add_new_shopper()
     results(sim, args.duration)
+    plot_results(sim)
     animation = Animation(sim, args.duration)
     animation.show()
 
@@ -53,6 +54,15 @@ class simulation:
 
     #vector to count number of people who are in shop
     shopping_count = []
+    #vector to record time steps
+    time = []
+
+    #vectors to record total number of people at t with each SIR level
+    sus_w_mask_t = []
+    sus_wo_mask_t = []
+    inf_w_mask_t = []
+    inf_wo_mask_t = []
+    caught_cov = []
 
     # probability of infection at each node in the shop
     # level 0 is probability of infection for people wearing a mask
@@ -70,7 +80,7 @@ class simulation:
         self.max_shoppers = max_shoppers
         self.month = month
         self.path_system = path_system
-
+        self.time_array = np.arange(self.duration)
 
 
     def update(self): 
@@ -119,7 +129,9 @@ class simulation:
 
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
         risk_in_mask = risk_no_mask / 2
+
         # capturing the state of the shop nodes for animation
+        ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
         sus_no_mask = person.cords[0]
         sus_mask = person.cords[1]
         inf_mas = person.cords[2]
@@ -127,7 +139,23 @@ class simulation:
         caught_covid = person.cords[4]
         simulation.susceptible = (sus_no_mask + sus_mask) # counting susceptible people for animation
         simulation.infected = (-inf_mas + -inf_no_mask + -caught_covid) # counting infected people as negative for visulisation in animation
-        simulation.shopping_count = len(simulation.shoppers)
+        no_sus_at_t = np.sum(sus_mask)+np.sum(sus_no_mask)
+        no_inf_at_t = np.sum(inf_mas) + np.sum(inf_no_mask)
+        shoppers_total = no_sus_at_t + no_inf_at_t
+        simulation.shopping_count.append(shoppers_total)
+
+        # calculation the susceptible people and storing in array
+        sus_no_maskt = np.sum(sus_no_mask)
+        simulation.sus_wo_mask_t.append(sus_no_maskt)
+        sus_w_maskt = np.sum(sus_mask)
+        simulation.sus_w_mask_t.append(sus_w_maskt)
+        inf_no_maskt = np.sum(inf_no_mask)
+        simulation.inf_wo_mask_t.append(inf_no_maskt)
+        inf_w_maskt = np.sum(inf_mas)
+        simulation.inf_w_mask_t.append(inf_w_maskt)
+
+        caught = np.sum(caught_covid)
+        simulation.caught_cov.append(caught)
 
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
@@ -173,6 +201,8 @@ class simulation:
                 # add suseptible person w/o mask
                 mask = 0
                 simulation.shoppers.append(person((0,0),1,speed, mask))
+
+
 
 #----------------------------------------------------------------------------#
 #                  Person class                                              #
@@ -247,6 +277,10 @@ class person:
             simulation.shopping_time.append(shopping_time)
             #and stores it in the left_shop array in the simulation class
             simulation.left_shop.append(leaving_info)
+
+
+
+
             #then remove them from the list of current shoppers 
             simulation.shoppers.remove(self)
         
@@ -291,7 +325,6 @@ def results(simulation, duration):
 
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration:
-        rgb_matrix = person.cords[0]
         # uncomment this^^^ too see how people move through the shop in the cords array
         simulation.update()
 
@@ -323,11 +356,44 @@ def results(simulation, duration):
     print("Out of those initially suseptible", percentage_who_caught_covid, "% caught covid")
     print("Average time in shop", average_shop_time, "minutes in the shop")
 
+#creating a new function to plot still graphs of the results
+def plot_results(simulation):
+    # pulling arrays from the simulation inorder to plot
+    x = simulation.time_array
+    x2 = simulation.shopping_time
+    total_shoppers = np.cumsum(simulation.shopping_count)
+    sus_w_mask = np.cumsum(simulation.sus_w_mask_t)
+    sus_wo_mask = np.cumsum(simulation.sus_wo_mask_t)
+    inf_w_mask_t = np.cumsum(simulation.inf_w_mask_t)
+    inf_wo_mask_t = np.cumsum(simulation.inf_wo_mask_t)
+    caught_covid_t = np.cumsum(simulation.caught_cov)
+    status = simulation.left_shop
+    #setting up the plots
+    fig, axs = plt.subplots(2, 2, figsize=(12,12)) # making a large figure to show the plots
+    axs[0, 0].plot(x, total_shoppers,'o') # plotting the total number of shoppers at every time step
+    axs[0, 0].set_title('Total shoppers through the shop during the time period') # setting title of overall shoppers in shop
+    axs[0,0].legend(['Total shoppers'])
+    axs[0, 1].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
+    axs[0, 1].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
+    axs[0, 1].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
+    axs[0, 1].plot(x, inf_w_mask_t, '--k') # plotting infected with mask with dashed line
+    axs[0, 1].plot(x, caught_covid_t, '--r') # plotting infected with mask with dashed line
+    axs[0,1].legend(['Susceptible with a mask', 'Susceptible without a mask', 'Infected without a mask', 'Infected with a mask' , 'Caught COVID within the shop'],loc=(1.04,0))
+    axs[0, 1].set_title('Shoppers various levels of infection') # setting title
+    axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers with each SIR')
+    axs[1, 0].plot(x, caught_covid_t, ':r')
+    axs[1, 0].set_title('Number of people who have caught covid in the shop')
+    axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers')
+    axs[1,0].legend(['People who caught COVID'])
+    axs[1, 1].scatter(x2, status)
+    axs[1, 1].set_title('The time people spent shopping and their leaving status')
+    axs[1,1].set(xlabel='Time in the shop(minutes)', ylabel='SIR level')
+    axs[1,1].set_yticks((0, 1, 2, 3, 4))
+    axs[1,1].set_yticklabels(("Sus wo mask", "Sus w mask", "Infected w mask", "Infected wo a mask", "Caught covid within the shop"))
+    fig.tight_layout()
 
 
-
-
-
+# TD SHALL I GET RID OF THIS?
 #function for getting user input
 def get_user_input():
     entry = input("Maximum number of people who can enter the shop at once: ")
@@ -353,7 +419,7 @@ class Animation:
 
         self.figure = plt.figure(figsize=(8, 4))
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
-        self.axes_line = self.figure.add_subplot(1, 2, 2)
+        #self.axes_line = self.figure.add_subplot(1, 2, 2)
 
         self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
         #self.lineanimation = LineAnimation(self.axes_line, self.simulation, duration)
@@ -413,24 +479,25 @@ class LineAnimation:
         self.axes = axes
         self.simulation = simulation
         self.duration = duration
-        self.time = []
-        self.shopping_no = []
-        self.axes.plot(self.shopping_no, linewidth=2)
+        self.xdata = []
+        self.no_shoppers = self.simulation.shopping_people
+        print(self.no_shoppers)
+        self.line = self.axes.plot(linewidth=2)
         #self.axes.set_xlabel('days')
         #self.axes.set_ylabel('%', rotation=0)
 
     def init(self):
-        #self.axes.set_xlim([0, self.duration])
-        #self.axes.set_ylim([0, 100])
-        return self.update(0)
+        self.axes.set_xlim([0, self.duration])
+        self.axes.set_ylim([0, 100])
+        return []
 
     def update(self,framenum):
-        minute = framenum
-        self.shopping_no = []
-        no_shoppers = self.simulation.time_step
-        self.shopping_no.append(no_shoppers)
-        print(self.shopping_no)
-        return self.shopping_no
+        self.no_shoppers = self.simulation.shopping_people
+        self.xdata.append(self.simulation.time_step)
+        print(self.no_shoppers)
+        print(self.xdata)
+        self.line.set_data(self.xdata, self.no_shoppers)
+        return self.line
 
 
 
