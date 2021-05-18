@@ -15,7 +15,7 @@ import Networkx_aldi_layout as lay
 import Infection_rate_data as inf_rate
 
 
-def main(*args):
+def main(args):
 #changing the argument input to allow the command line to ask the user to input
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
@@ -27,13 +27,27 @@ def main(*args):
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
                     help='Maximum number of shoppers in the shop')
     parser.add_argument('--month', metavar='N', type=int, default=1020,
-                    help='The month to use to represent the infection rate')
+                    help='The month to use to represent the infection rate') #TD: explain this a bit more
+    parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
+                    help='Probability of any individual in the area being infected')
     parser.add_argument('--path_system', metavar='N', type=int, default=2,
                     help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
     args = parser.parse_args(args)
 
+    #TD: something to say you cant have level of covid and month given at same time? or just pick on or the other? (Will automatically go by the month if thats given)
+    #TD: make parser args for next variables
+    prob_of_i = 0.2
+    chance_person_wears_mask = 0.4   
+
+    if args.month:
+        level_of_covid_in_area = inf_rate.infection_rate(args.month)
+    else:
+        level_of_covid_in_area = args.level_of_covid
+        
+    
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, args.path_system)
+    # more sim inputs
     #starts out with 1 shopper 
     sim.add_new_shopper()
     results(sim, args.duration)
@@ -62,15 +76,16 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers,month,path_system):
+    def __init__(self, entry, duration, max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, path_system):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
         self.time_step = 0
         self.max_shoppers = max_shoppers
-        self.month = month
         self.path_system = path_system
-
+        self.prob_of_i = prob_of_i
+        self.chance_person_wears_mask = chance_person_wears_mask 
+        self.level_of_covid_in_area = level_of_covid_in_area
 
 
     def update(self): 
@@ -111,14 +126,15 @@ class simulation:
         #number of infected people ate ach shop node w/o mask
         i_no_mask = person.cords[3]
 
-        prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
-        reduced_i_prob_w_mask = prob_of_i / 2 #chance of a person w/o mask catching covid from infected person w/ mask
+        reduced_i_prob_w_mask = self.prob_of_i / 2 #chance of a person w/o mask catching covid from infected person w/ mask
 
         prob_of_i_from_i_w_mask = reduced_i_prob_w_mask * i_w_mask
-        prob_of_i_from_i_no_mask = prob_of_i * i_no_mask
+        prob_of_i_from_i_no_mask = self.prob_of_i * i_no_mask
 
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
         risk_in_mask = risk_no_mask / 2
+        
+        #TD: this is doubling up some variables, edit
         # capturing the state of the shop nodes for animation
         sus_no_mask = person.cords[0]
         sus_mask = person.cords[1]
@@ -136,8 +152,8 @@ class simulation:
         #creates a new instance of a person thats either
         #suseptible or infected, based on the "level of covid
         #in the area" and adds them to the list of shoppers 
-        chance_person_wears_mask = 0.5
-        level_of_covid_in_area = inf_rate.infection_rate(self.month)
+
+        #evel_of_covid_in_area = inf_rate.infection_rate(self.month)
 
         if self.path_system == 2: # when user has specified 1 way simulation
             speed = 2 # assign one way paths
@@ -146,8 +162,8 @@ class simulation:
 
 
         #add infected person
-        if level_of_covid_in_area > random():
-            if chance_person_wears_mask > random():
+        if self.level_of_covid_in_area > random():
+            if self.chance_person_wears_mask > random():
                 #add infected person with mask
                 mask =  1
                 simulation.shoppers.append(person((0,0),2,speed, mask))
@@ -159,7 +175,7 @@ class simulation:
 
         #add suseptible person
         else:
-            if chance_person_wears_mask > random():
+            if self.chance_person_wears_mask > random():
                 # add suseptible person w/ mask
                 mask = 1
                 simulation.shoppers.append(person((0,0),0,speed, mask))
@@ -211,7 +227,9 @@ class person:
             self.path = person.one_way_paths[rand_int]
 
         self.shop_time = len(self.path)
-            #status is their path and covid status in one thats used in the cords array
+           
+            
+        #status is their path and covid status in one thats used in the cords array
         #eg path of [(0,0), (0,1), (0,2)] for an infected person becomes
         # a status of [(1,0,0), (1,0,1), (1,0,2)]
         #the for loop takes each element in the paths list, turns it from a tuple to a list to edit it,
@@ -281,11 +299,11 @@ class person:
 
 
 def results(simulation, duration):  
-    #this will probably be turned into the animation class 
+    # TD:add docstring 
 
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration:
-        rgb_matrix = person.cords[0]
+        #rgb_matrix = person.cords[0]
         # uncomment this^^^ too see how people move through the shop in the cords array
         simulation.update()
 
@@ -323,22 +341,22 @@ def results(simulation, duration):
 
 
 #function for getting user input
-def get_user_input():
-    entry = input("Maximum number of people who can enter the shop at once: ")
-    duration = input("Number of time steps to run the simulation for: ")
-    max_shoppers = input("Maximum number of people allowed in the shop at once: ")
+#def get_user_input():
+ #   entry = input("Maximum number of people who can enter the shop at once: ")
+ #   duration = input("Number of time steps to run the simulation for: ")
+ #   max_shoppers = input("Maximum number of people allowed in the shop at once: ")
     #prob_infection = input("Probability of catching covid when within 2m of someone infected: ")
-    params = [entry, duration, max_shoppers]
-    if all(str(i).isdigit() for i in params):  # Check input is valid
-        params = [int(x) for x in params]
-    else:
-        print(
-            "Could not parse input. The simulation will use default values:",
-            "\n10 people max entry at one time, 70 people max in the shop at one time, and the simulation will run for 200 time steps.",
+ #   params = [entry, duration, max_shoppers]
+ #   if all(str(i).isdigit() for i in params):  # Check input is valid
+ #       params = [int(x) for x in params]
+ #   else:
+  #      print(
+   #         "Could not parse input. The simulation will use default values:",
+  #          "\n10 people max entry at one time, 70 people max in the shop at one time, and the simulation will run for 200 time steps.",
             #"\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
-        )
-        params = [10, 120, 50]
-    return params
+     #   )
+  #      params = [10, 120, 50]
+ #   return params
 
 class Animation:
     def __init__(self, simulation, duration):
@@ -432,7 +450,7 @@ class LineAnimation:
 if __name__ == "__main__":
 
     import sys
-    main(*sys.argv[1:])
+    main(sys.argv[1:])
 
 
 
