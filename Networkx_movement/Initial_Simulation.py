@@ -481,7 +481,7 @@ class Animation:
 
 
 class GridAnimation:
-    """Animate a grid showing status of people at each position"""
+    """Animate a grid showing the infected people moving round the shop"""
 
     def __init__(self, axes, simulation):
         self.axes = axes

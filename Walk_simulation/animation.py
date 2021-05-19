@@ -6,19 +6,16 @@ Animation class to animate the simulation of person and shop classes.
 
 @author: hanspurge
 """
-import numpy as np
-import random as rd
 import networkx as nx
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 
 
 # Import path generation from other file
-import Networkx_random_path_example as path_gen
 # Import aldi layout for other file
-import Networkx_aldi_layout as lay
 # Import aldi layout for other file
-import Initial_Simulation as sim
+from covid_shop_simulation import Initial_Simulation as sim
+
 
 class NetworkAnimation:
     ''' Animate networkX showing movement of people'''
