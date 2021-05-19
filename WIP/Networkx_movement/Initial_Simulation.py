@@ -22,11 +22,11 @@ def main(*args):
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     parser = argparse.ArgumentParser(description='Animate an epidemic')
-    parser.add_argument('--max_entry', metavar='N', type=int, default=2,
+    parser.add_argument('--max_entry', metavar='N', type=int, default=5,
                         help='Maximum of N people can enter at once')
-    parser.add_argument('--duration', metavar='N', type=int, default=100,
+    parser.add_argument('--duration', metavar='N', type=int, default=200,
                         help='Run simulation for N time steps')
-    parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
+    parser.add_argument('--max_shoppers', metavar='N', type=int, default=30,
                     help='Maximum number of shoppers in the shop')
     parser.add_argument('--month', metavar='myy', type=int, default=1120,
                     help='The month to use to represent the infection rate where 320 is March 2020 (from 320 - 421)')
@@ -51,14 +51,13 @@ def main(*args):
 
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system, prob_of_i,chance_person_wears_mask)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask)
     #starts out with 1 shopper 
     sim.add_new_shopper(1)
     results(sim, args.duration)
-    plot_results(sim,args.duration)
-    plt.show()
+
     #plotting the graphs showing simulation results
-# Plot or animation?
+    # Plot or animation?
     if args.plot:
         plot_results(sim, args.duration)
         plt.show()
@@ -181,7 +180,7 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers,month,path_system, prob_of_i,chance_person_wears_mask):
+    def __init__(self, entry, duration, max_shoppers, path_system, prob_of_i,chance_person_wears_mask):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
@@ -255,14 +254,14 @@ class simulation:
         """finding the number of people who can enter the shop in this time step"""
         if len(simulation.shoppers) < self.max_shoppers - self.max_entry:
             # randomly picking number of new people to enter the shop
-            number_of_shoppers_entering = randint(0, self.max_entry)
+            number_of_shoppers_entering = randint(0, self.max_entry +1)
 
 
         elif len(simulation.shoppers) < self.max_shoppers:
             # max number of people that can enter
             max_entry_to_meet_capacity = self.max_shoppers - len(simulation.shoppers)
             # randomly picking number of new people to enter shop that wont go over maximum capacity
-            number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity)
+            number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity +1)
 
         else:
             number_of_shoppers_entering = 0
@@ -275,7 +274,8 @@ class simulation:
         #suseptible or infected, based on the "level of covid
         #in the area" and adds them to the list of shoppers
 
-        self.number_of_shoppers_entering = number_of_shoppers_entering
+        shoppers_to_add = np.arange(number_of_shoppers_entering)
+        print(shoppers_to_add)
 
         if self.path_system == 2: # when user has specified 1 way simulation
             speed = 2 # assign one way paths
@@ -287,30 +287,29 @@ class simulation:
             speed = randint(0,1)  # assign shoppers slow and quick paths randomly
 
 
+        for shopper in shoppers_to_add:    
+            #add infected person
+            if self.level_of_covid_in_area > random():
+                if self.chance_person_wears_mask > random():
+                    #add infected person with mask
+                    mask =  1
+                    simulation.shoppers.append(person((0,0),2,speed, mask))
+                else:
+                    # add infected person without mask
+                    mask = 0
+                    simulation.shoppers.append(person((0,0),3,speed, mask))
 
 
-        #add infected person
-        if self.level_of_covid_in_area > random():
-            if self.chance_person_wears_mask > random():
-                #add infected person with mask
-                mask =  1
-                simulation.shoppers.append(person((0,0),2,speed, mask))
+            #add suseptible person
             else:
-                # add infected person without mask
-                mask = 0
-                simulation.shoppers.append(person((0,0),3,speed, mask))
-
-
-        #add suseptible person
-        else:
-            if self.chance_person_wears_mask > random():
-                # add suseptible person w/ mask
-                mask = 1
-                simulation.shoppers.append(person((0,0),0,speed, mask))
-            else:
-                # add suseptible person w/o mask
-                mask = 0
-                simulation.shoppers.append(person((0,0),1,speed, mask))
+                if self.chance_person_wears_mask > random():
+                    # add suseptible person w/ mask
+                    mask = 1
+                    simulation.shoppers.append(person((0,0),0,speed, mask))
+                else:
+                    # add suseptible person w/o mask
+                    mask = 0
+                    simulation.shoppers.append(person((0,0),1,speed, mask))
 
     def get_node_status(self):
 
