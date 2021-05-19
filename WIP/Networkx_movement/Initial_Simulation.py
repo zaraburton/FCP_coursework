@@ -194,28 +194,25 @@ class simulation:
         #assign new SIR level to every shopper based on everyone new position
         [person.new_SIR_level() for person in simulation.shoppers if person.SIR_level < 2]
         
+        #assign number of shoppers to enter at this timestep
+        number_of_new_shoppers = self.get_number_of_shoppers_entering()
 
-        # finding the number of people who can enter the shop in this time step
-        if len(simulation.shoppers) < self.max_shoppers - self.max_entry:
-            # randomly picking number of new people to enter the shop
-            number_of_shoppers_entering = randint(0, self.max_entry)
-
-
-        elif len(simulation.shoppers) < self.max_shoppers:
-            # max number of people that can enter
-            max_entry_to_meet_capacity = self.max_shoppers - len(simulation.shoppers)
-            # randomly picking number of new people to enter shop that wont go over maximum capacity
-            number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity)
         # adding the new people to the shop
-        for j in range(number_of_shoppers_entering):
-            self.add_new_shopper()
+        self.add_new_shopper(number_of_new_shoppers)
         
+       
         #add one to the time step counter and record the time step total
         self.time_step += 1
+
+
+        #-----------whats going on here?  ------------------
         #stores all the time steps in an array
         simulation.time_step_counter.append(self.time_step)
         #stores the number of people at each time step in an array
         simulation.people_at_time_step.append(len(self.shoppers))
+
+
+
 
 
     def update_infection_risk(self):
@@ -237,7 +234,7 @@ class simulation:
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
 
-        #------------------------------------------------------------------------------------#
+        #--------------------------------please put into own function??----------------------------------------------------#
         # capturing the state of the shop nodes for animation
         ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
         sus_no_mask = person.cords[0]
@@ -265,15 +262,31 @@ class simulation:
         caught = np.sum(caught_covid)
         simulation.caught_cov.append(caught)
 
+    def get_number_of_shoppers_entering(self):
+        """finding the number of people who can enter the shop in this time step"""
+        if len(simulation.shoppers) < self.max_shoppers - self.max_entry:
+            # randomly picking number of new people to enter the shop
+            number_of_shoppers_entering = randint(0, self.max_entry)
 
-    def add_new_shopper(self):
+
+        elif len(simulation.shoppers) < self.max_shoppers:
+            # max number of people that can enter
+            max_entry_to_meet_capacity = self.max_shoppers - len(simulation.shoppers)
+            # randomly picking number of new people to enter shop that wont go over maximum capacity
+            number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity)
+
+        else: 
+            number_of_shoppers_entering = 0
+
+        return number_of_shoppers_entering
+
+    def add_new_shopper(self, number_of_shoppers_entering):
         """adds new person the the shop"""
         #creates a new instance of a person thats either
         #suseptible or infected, based on the "level of covid
         #in the area" and adds them to the list of shoppers 
-        chance_person_wears_mask = 0.5
-        level_of_covid_in_area = inf_rate.infection_rate(self.month)
 
+        self.number_of_shoppers_entering = number_of_shoppers_entering
 
         if self.path_system == 2: # when user has specified 1 way simulation
             speed = 2 # assign one way paths
@@ -286,8 +299,8 @@ class simulation:
 
 
         #add infected person
-        if level_of_covid_in_area > random():
-            if chance_person_wears_mask > random():
+        if self.level_of_covid_in_area > random():
+            if self.chance_person_wears_mask > random():
                 #add infected person with mask
                 mask =  1
                 simulation.shoppers.append(person((0,0),2,speed, mask))
@@ -299,7 +312,7 @@ class simulation:
 
         #add suseptible person
         else:
-            if chance_person_wears_mask > random():
+            if self.chance_person_wears_mask > random():
                 # add suseptible person w/ mask
                 mask = 1
                 simulation.shoppers.append(person((0,0),0,speed, mask))
@@ -393,7 +406,8 @@ class person:
             self.path = person.one_way_paths[rand_int]
 
         self.shop_time = len(self.path)
-            #status is their path and covid status in one thats used in the cords array
+        
+        #status is their path and covid status in one thats used in the cords array
         #eg path of [(0,0), (0,1), (0,2)] for an infected person becomes
         # a status of [(1,0,0), (1,0,1), (1,0,2)]
         #the for loop takes each element in the paths list, turns it from a tuple to a list to edit it,
@@ -423,10 +437,6 @@ class person:
             simulation.shopping_time.append(shopping_time)
             #and stores it in the left_shop array in the simulation class
             simulation.left_shop.append(leaving_info)
-
-
-
-
             #then remove them from the list of current shoppers 
             simulation.shoppers.remove(self)
         
@@ -467,10 +477,11 @@ class person:
 
 
 def results(simulation, duration):  
-    #this will probably be turned into the animation class 
+    # TD:add docstring 
 
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration:
+        #rgb_matrix = person.cords[0]
         # uncomment this^^^ too see how people move through the shop in the cords array
         simulation.update()
 
@@ -546,22 +557,22 @@ def plot_results(simulation):
 
 # TD SHALL I GET RID OF THIS?
 #function for getting user input
-def get_user_input():
-    entry = input("Maximum number of people who can enter the shop at once: ")
-    duration = input("Number of time steps to run the simulation for: ")
-    max_shoppers = input("Maximum number of people allowed in the shop at once: ")
+#def get_user_input():
+ #   entry = input("Maximum number of people who can enter the shop at once: ")
+  #  duration = input("Number of time steps to run the simulation for: ")
+   # max_shoppers = input("Maximum number of people allowed in the shop at once: ")
     #prob_infection = input("Probability of catching covid when within 2m of someone infected: ")
-    params = [entry, duration, max_shoppers]
-    if all(str(i).isdigit() for i in params):  # Check input is valid
-        params = [int(x) for x in params]
-    else:
-        print(
-            "Could not parse input. The simulation will use default values:",
-            "\n10 people max entry at one time, 70 people max in the shop at one time, and the simulation will run for 200 time steps.",
-            #"\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
-        )
-        params = [10, 120, 50]
-    return params
+    #params = [entry, duration, max_shoppers]
+    #if all(str(i).isdigit() for i in params):  # Check input is valid
+   #     params = [int(x) for x in params]
+   # else:
+    #    print(
+     #       "Could not parse input. The simulation will use default values:",
+      #      "\n10 people max entry at one time, 70 people max in the shop at one time, and the simulation will run for 200 time steps.",
+       #     #"\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
+        #)
+ #       params = [10, 120, 50]
+  #  return params
 
 class Animation:
     def __init__(self, simulation, duration):
