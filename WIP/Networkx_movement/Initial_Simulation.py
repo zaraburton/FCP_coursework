@@ -30,12 +30,26 @@ def main(*args):
                     help='The month to use to represent the infection rate')
     parser.add_argument('--path_system', metavar='N', type=int, default=0,
                     help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
+    parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
+                    help='Probability of any individual in the area being infected')
     args = parser.parse_args(args)
 
+    #TD: make parser args for next variables
+    prob_of_i = 0.2
+    chance_person_wears_mask = 0.4 
+
+    #TD: something to say you cant have level of covid and month given at same time? or just pick on or the other? (Will automatically go by the month if thats given)
+    # set level_of_covid_in_area (prob of infected person entering the shop) as infection rate for that month
+    if args.month:
+        level_of_covid_in_area = inf_rate.infection_rate(args.month)
+    else:
+        level_of_covid_in_area = args.level_of_covid
+        
+
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, args.path_system)
     #starts out with 1 shopper 
-    sim.add_new_shopper()
+    sim.add_new_shopper(1)
     results(sim, args.duration)
     plot_results(sim)
     animation = Animation(sim, args.duration)
@@ -156,15 +170,17 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers,month,path_system):
+    def __init__(self, entry, duration, max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, path_system):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
         self.time_step = 0
         self.max_shoppers = max_shoppers
-        self.month = month
         self.path_system = path_system
         self.time_array = np.arange(self.duration)
+        self.prob_of_i = prob_of_i
+        self.chance_person_wears_mask = chance_person_wears_mask 
+        self.level_of_covid_in_area = level_of_covid_in_area
 
 
     def update(self): 
@@ -218,6 +234,10 @@ class simulation:
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
         risk_in_mask = risk_no_mask / 2
 
+        # create 2 layer array of risk
+        simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
+
+        #------------------------------------------------------------------------------------#
         # capturing the state of the shop nodes for animation
         ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
         sus_no_mask = person.cords[0]
@@ -245,8 +265,6 @@ class simulation:
         caught = np.sum(caught_covid)
         simulation.caught_cov.append(caught)
 
-        # create 2 layer array of risk
-        simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
 
     def add_new_shopper(self):
         """adds new person the the shop"""
