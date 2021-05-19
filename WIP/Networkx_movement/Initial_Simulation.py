@@ -36,7 +36,7 @@ def main(*args):
 
     #TD: make parser args for next variables
     prob_of_i = 0.2
-    chance_person_wears_mask = 0.4 
+    chance_person_wears_mask = 0.4
 
     #TD: something to say you cant have level of covid and month given at same time? or just pick on or the other? (Will automatically go by the month if thats given)
     # set level_of_covid_in_area (prob of infected person entering the shop) as infection rate for that month
@@ -44,14 +44,16 @@ def main(*args):
         level_of_covid_in_area = inf_rate.infection_rate(args.month)
     else:
         level_of_covid_in_area = args.level_of_covid
-        
+
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, args.path_system)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system)
     #starts out with 1 shopper 
-    sim.add_new_shopper(1)
+    sim.add_new_shopper()
     results(sim, args.duration)
+    #plotting the graphs showing simulation results
     plot_results(sim)
+    #calling the animation class to plot the animation
     animation = Animation(sim, args.duration)
     animation.show()
 
@@ -170,7 +172,7 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, path_system):
+    def __init__(self, entry, duration, max_shoppers,month,path_system):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
@@ -179,7 +181,7 @@ class simulation:
         self.path_system = path_system
         self.time_array = np.arange(self.duration)
         self.prob_of_i = prob_of_i
-        self.chance_person_wears_mask = chance_person_wears_mask 
+        self.chance_person_wears_mask = chance_person_wears_mask
         self.level_of_covid_in_area = level_of_covid_in_area
 
 
@@ -200,7 +202,7 @@ class simulation:
         # adding the new people to the shop
         self.add_new_shopper(number_of_new_shoppers)
         
-       
+
         #add one to the time step counter and record the time step total
         self.time_step += 1
 
@@ -237,13 +239,19 @@ class simulation:
         #--------------------------------please put into own function??----------------------------------------------------#
         # capturing the state of the shop nodes for animation
         ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
+        # capturing the state of the shop nodes for use in animation
         sus_no_mask = person.cords[0]
+        simulation.sus_no_mask = sus_no_mask
         sus_mask = person.cords[1]
+        simulation.sus_mask = sus_mask
         inf_mas = person.cords[2]
+        simulation.inf_mas = inf_mas
         inf_no_mask = person.cords[3]
+        simulation.inf_no_mask = inf_no_mask
         caught_covid = person.cords[4]
+        simulation.caught_covid = caught_covid
         simulation.susceptible = (sus_no_mask + sus_mask) # counting susceptible people for animation
-        simulation.infected = (-inf_mas + -inf_no_mask + -caught_covid) # counting infected people as negative for visulisation in animation
+        simulation.infected = (inf_mas + inf_no_mask + caught_covid) # counting infected people for animation
         no_sus_at_t = np.sum(sus_mask)+np.sum(sus_no_mask)
         no_inf_at_t = np.sum(inf_mas) + np.sum(inf_no_mask)
         shoppers_total = no_sus_at_t + no_inf_at_t
@@ -275,7 +283,7 @@ class simulation:
             # randomly picking number of new people to enter shop that wont go over maximum capacity
             number_of_shoppers_entering = randint(0, max_entry_to_meet_capacity)
 
-        else: 
+        else:
             number_of_shoppers_entering = 0
 
         return number_of_shoppers_entering
@@ -284,7 +292,7 @@ class simulation:
         """adds new person the the shop"""
         #creates a new instance of a person thats either
         #suseptible or infected, based on the "level of covid
-        #in the area" and adds them to the list of shoppers 
+        #in the area" and adds them to the list of shoppers
 
         self.number_of_shoppers_entering = number_of_shoppers_entering
 
@@ -333,6 +341,8 @@ class simulation:
             count = np.sum(simgrid[statusnum])
             percentages[status] = 100 * count / total_people
         return percentages
+
+
 #----------------------------------------------------------------------------#
 #                  Person class                                              #
 #----------------------------------------------------------------------------#
@@ -406,7 +416,7 @@ class person:
             self.path = person.one_way_paths[rand_int]
 
         self.shop_time = len(self.path)
-        
+
         #status is their path and covid status in one thats used in the cords array
         #eg path of [(0,0), (0,1), (0,2)] for an infected person becomes
         # a status of [(1,0,0), (1,0,1), (1,0,2)]
@@ -477,7 +487,7 @@ class person:
 
 
 def results(simulation, duration):  
-    # TD:add docstring 
+    # TD:add docstring
 
     #run the simulation for as many time steps as the duration 
     while simulation.time_step < duration:
@@ -504,10 +514,10 @@ def results(simulation, duration):
 
     # to avoid dividing by zero
     if num_caught_covid == 0:
-        num_caught_covid += 0.001 
+        num_caught_covid += 0.001
     # calculate % of people who entered the shop suseptile who left with covid
     percentage_who_caught_covid = (num_caught_covid / num_initially_suseptible)*100
-    
+
     #function to calculate average of a list
     def Average(lst):
         return mean(lst)
@@ -621,11 +631,27 @@ class GridAnimation:
         self.simulation = simulation
         susceptible = self.simulation.susceptible
         infected = self.simulation.infected
-        shop = infected+susceptible
-        self.image = self.axes.imshow(shop, cmap='bwr')
+        caught_covid = simulation.caught_covid
+        #suseptable = self.simulation.susceptible
+        self.shop = np.empty((infected.shape))
+        self.shop[infected ==1 ] = 1
+        self.shop[infected == 2] = 2
+        self.shop[infected == 3] = 3
+        self.shop[infected == 3] = 4
+        self.image = self.axes.imshow(self.shop, cmap = 'Pastel1')
         self.axes.set_xticks([])
         self.axes.set_yticks([])
-        self.axes.set_title('Infected people moving round the shop space')
+        self.axes.set_title('Infected people moving round the shop')
+        # i.e. a sorted list of all values in data
+        values = np.unique(self.shop.ravel())
+        labels = [ '0','1', '2', '3','4','5','6']
+        # get the colors of the values, according to the
+        # colormap used by imshow
+        colors = [self.image.cmap(self.image.norm(value)) for value in values]
+        # create a patch (proxy artist) for every color
+        patches = [mpatches.Patch(color=colors[i], label="Number of infected people in the space: {l}".format(l=labels[i])) for i in range(len(values))]
+        # put those patched as legend-handles into the legend
+        self.axes.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2)
 
 
     def init(self):
@@ -633,10 +659,13 @@ class GridAnimation:
 
     def update(self, framenum):
             minute = framenum
-            susceptible = self.simulation.susceptible
             infected = self.simulation.infected
-            shop = infected
-            self.image.set_array(shop)
+            self.shop = np.empty((infected.shape))
+            self.shop[infected == 1] = 1
+            self.shop[infected == 2] = 2
+            self.shop[infected == 3] = 3
+            self.shop[infected == 3] = 4
+            self.image.set_array(self.shop)
             return [self.image]
 
 
