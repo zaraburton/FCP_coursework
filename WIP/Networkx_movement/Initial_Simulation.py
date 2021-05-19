@@ -275,7 +275,6 @@ class simulation:
         #in the area" and adds them to the list of shoppers
 
         shoppers_to_add = np.arange(number_of_shoppers_entering)
-        print(shoppers_to_add)
 
         if self.path_system == 2: # when user has specified 1 way simulation
             speed = 2 # assign one way paths
@@ -557,7 +556,6 @@ def plot_results(simulation,duration):
     x = np.arange(duration)
     x2 = simulation.shopping_time
     shoppers_at_step = simulation.people_at_time_step
-    print(shoppers_at_step)
     sus_w_mask = simulation.sus_w_mask_t
     sus_wo_mask = simulation.sus_wo_mask_t
     inf_w_mask_t = simulation.inf_w_mask_t
