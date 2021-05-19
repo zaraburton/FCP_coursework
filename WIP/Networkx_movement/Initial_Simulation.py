@@ -55,8 +55,7 @@ def main(*args):
     #starts out with 1 shopper 
     sim.add_new_shopper(1)
     results(sim, args.duration)
-    plot_results(sim, args.duration)
-    plt.show()
+
     #plotting the graphs showing simulation results
     # Plot or animation?
     if args.plot:
