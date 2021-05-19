@@ -57,14 +57,13 @@ def main(*args):
     results(sim, args.duration)
     #plotting the graphs showing simulation results
 # Plot or animation?
-    #if args.plot:
-    #    plot_results(sim, args.duration)
-    #else:
+    if args.plot:
+        plot_results(sim, args.duration)
+        plt.show()
+    else:
     # calling the animation class to plot the animation
-    animation = Animation(sim, args.duration)
-    animation.show()
-    plot_results(sim,args.duration)
-    plt.show()
+        animation = Animation(sim, args.duration)
+        animation.show()
 
 
 #----------------------------------------------------------------------------#
