@@ -64,6 +64,33 @@ class simulation:
     inf_wo_mask_t = []
     caught_cov = []
 
+    # Status codes to store in the numpy array representing the state.
+    ONE_PERSON = 1
+    TWO_PEOPLE = 2
+    THREE_PEOPLE = 3
+    FOUR_PEOPLE = 4
+
+
+    STATUSES = {
+        'Single person': ONE_PERSON,
+        'Two people within the same space': TWO_PEOPLE,
+        'Three people within the same space': THREE_PEOPLE,
+        'Four people within the same space': FOUR_PEOPLE,
+    }
+
+    COLOURMAP = {
+        'Single person': 'green',
+        'Two people within the same space': 'red',
+        'Three people within the same space': 'magenta',
+        'Four people within the same space': 'magenta',
+    }
+    COLOURMAP_RGB = {
+        'yellow': (255, 255, 0),
+        'green': (0, 255, 0),
+       'red': (255, 0, 0),
+       'magenta': (255, 0, 255),
+        'cyan': (0, 255, 255),
+     }
     # probability of infection at each node in the shop
     # level 0 is probability of infection for people wearing a mask
     # level 1 is probability of infection for people without a mask
@@ -202,8 +229,16 @@ class simulation:
                 mask = 0
                 simulation.shoppers.append(person((0,0),1,speed, mask))
 
+    def get_node_status(self):
 
+        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4]
+        total_people = np.sum(simgrid)
+        percentages = {}
 
+        for status, statusnum in self.STATUSES.items():
+            count = np.count_nonzero(simgrid == statusnum)
+            percentages[status] = 100 * count / total_people
+        return percentages
 #----------------------------------------------------------------------------#
 #                  Person class                                              #
 #----------------------------------------------------------------------------#
@@ -417,24 +452,23 @@ class Animation:
         self.simulation = simulation
         self.duration = duration
 
-        self.figure = plt.figure(figsize=(8, 4))
+        self.figure = plt.figure(figsize=(12, 4))
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
-        #self.axes_line = self.figure.add_subplot(1, 2, 2)
-
+        self.axes_line = self.figure.add_subplot(1, 2, 2)
         self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
-        #self.lineanimation = LineAnimation(self.axes_line, self.simulation, duration)
+        self.lineanimation = LineAnimation(self.axes_line, self.simulation, duration)
 
     def show(self):
         """Run the animation on screen"""
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
-                init_func = self.init, blit=True, interval=200)
+                init_func = self.init, blit=True, interval=200,repeat = False)
         plt.show()
 
     def init(self):
         """Initialise the animation (called by FuncAnimation)"""
         actors = []
         actors += self.gridanimation.init()
-        #actors += self.lineanimation.init()
+        actors += self.lineanimation.init()
         return actors
 
     def update(self, framenumber):
@@ -442,7 +476,7 @@ class Animation:
         self.simulation.update()
         actors = []
         actors += self.gridanimation.update(framenumber)
-        #actors += self.lineanimation.update(framenumber)
+        actors += self.lineanimation.update(framenumber)
         return actors
 
 
@@ -458,6 +492,7 @@ class GridAnimation:
         self.image = self.axes.imshow(shop, cmap='bwr')
         self.axes.set_xticks([])
         self.axes.set_yticks([])
+        self.axes.set_title('Infected people moving round the shop space')
 
 
     def init(self):
@@ -467,7 +502,7 @@ class GridAnimation:
             minute = framenum
             susceptible = self.simulation.susceptible
             infected = self.simulation.infected
-            shop = infected+susceptible
+            shop = infected
             self.image.set_array(shop)
             return [self.image]
 
@@ -480,11 +515,15 @@ class LineAnimation:
         self.simulation = simulation
         self.duration = duration
         self.xdata = []
-        self.no_shoppers = self.simulation.shopping_people
-        print(self.no_shoppers)
-        self.line = self.axes.plot(linewidth=2)
-        #self.axes.set_xlabel('days')
-        #self.axes.set_ylabel('%', rotation=0)
+        self.ydata = {status: [] for status in simulation.STATUSES}
+        self.line_mpl = {}
+        for status, colour in simulation.COLOURMAP.items():
+            [line] = self.axes.plot([], [], color=colour, label=status, linewidth=1)
+            self.line_mpl[status] = line
+        self.axes.legend(prop={'size':'x-small'}, loc='center right')
+        self.axes.set_xlabel('Time steps (minutes)')
+        self.axes.set_ylabel('%', rotation=0)
+        self.axes.set_title('Crowding in the shop - proportion of people in the same node')
 
     def init(self):
         self.axes.set_xlim([0, self.duration])
@@ -492,12 +531,12 @@ class LineAnimation:
         return []
 
     def update(self,framenum):
-        self.no_shoppers = self.simulation.shopping_people
-        self.xdata.append(self.simulation.time_step)
-        print(self.no_shoppers)
-        print(self.xdata)
-        self.line.set_data(self.xdata, self.no_shoppers)
-        return self.line
+        percents = self.simulation.get_node_status()
+        self.xdata.append(len(self.xdata))
+        for status, percent in percents.items():
+            self.ydata[status].append(percent)
+            self.line_mpl[status].set_data(self.xdata, self.ydata[status])
+        return list(self.line_mpl.values())
 
 
 
