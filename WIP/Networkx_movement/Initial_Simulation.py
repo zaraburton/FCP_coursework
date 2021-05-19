@@ -501,12 +501,17 @@ def plot_results(simulation):
     axs[0, 0].plot(x, shoppers_at_step,'-b') # plotting the total number of shoppers at every time step
     axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
     axs[0,0].legend(['Number of Shoppers'])
-    axs[0, 1].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
-    axs[0, 1].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
-    axs[0, 1].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
-    axs[0, 1].plot(x, inf_w_mask_t, '--k') # plotting infected with mask with dashed line
-    axs[0, 1].plot(x, caught_covid_t, '--r') # plotting infected with mask with dashed line
-    axs[0,1].legend(['Susceptible with a mask', 'Susceptible without a mask', 'Infected without a mask', 'Infected with a mask' , 'Caught COVID within the shop'],loc=(1.04,0))
+    #axs[0, 1].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
+    #axs[0, 1].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
+    #axs[0, 1].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
+    #axs[0, 1].plot(x, inf_w_mask_t, '--k') # plotting infected with mask with dashed line
+    #axs[0, 1].plot(x, caught_covid_t, '--r') # plotting infected with mask with dashed line
+    #axs[0,1].legend(['Susceptible with a mask', 'Susceptible without a mask', 'Infected without a mask', 'Infected with a mask' , 'Caught COVID within the shop'],loc=(1.04,0))
+    axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t,
+                        labels=['Susceptable w mask', 'Susceptable wo mask', 'Infected w mask', 'Infected wo mask',
+                                'Caught COV in shop'])
+    axs[0,1].legend()
+    axs[0, 1].set_title('Proportion of each SIR level when leaving')
     axs[0, 1].set_title('Shoppers various levels of infection') # setting title
     axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers with each SIR')
     axs[1, 0].plot(x, caught_covid_t, ':r')
@@ -514,8 +519,8 @@ def plot_results(simulation):
     axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers')
     axs[1,0].legend(['People who caught COVID'])
     axs[1, 1].scatter(x2, status)
-    axs[1, 1].set_title('The time people spent shopping and their leaving status')
-    axs[1,1].set(xlabel='Time in the shop(minutes)', ylabel='SIR level')
+    axs[1, 1].set_title('Proportion of each SIR level when leaving')
+    axs[1,1].set(xlabel='Time in the shop(minutes)', ylabel='Cumulative shoppers')
     axs[1,1].set_yticks((0, 1, 2, 3, 4))
     axs[1,1].set_yticklabels(("Sus wo mask", "Sus w mask", "Infected w mask", "Infected wo a mask", "Caught covid within the shop"))
     fig.tight_layout()
