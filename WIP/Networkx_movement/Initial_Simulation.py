@@ -4,9 +4,11 @@ import numpy as np
 #import random as rd
 from numpy.random import random, randint
 from statistics import mean
-
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+
+
 
 # Import path generation from other file
 import Networkx_random_path_example as path_gen
@@ -26,12 +28,14 @@ def main(*args):
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=12,
                     help='Maximum number of shoppers in the shop')
-    parser.add_argument('--month', metavar='N', type=int, default=1120,
-                    help='The month to use to represent the infection rate')
+    parser.add_argument('--month', metavar='myy', type=int, default=1120,
+                    help='The month to use to represent the infection rate where 320 is March 2020 (from 320 - 421)')
     parser.add_argument('--path_system', metavar='N', type=int, default=0,
                     help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
     parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
                     help='Probability of any individual in the area being infected')
+    parser.add_argument('--plot', action='store_true',
+                    help='Generate plots instead of animation')
     args = parser.parse_args(args)
 
     #TD: make parser args for next variables
@@ -47,15 +51,23 @@ def main(*args):
 
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.month, args.path_system, prob_of_i,chance_person_wears_mask)
     #starts out with 1 shopper 
-    sim.add_new_shopper()
+    sim.add_new_shopper(1)
     results(sim, args.duration)
     #plotting the graphs showing simulation results
+# Plot or animation?
+    if args.plot:
+        plot_results(sim)
+    else:
+        # calling the animation class to plot the animation
+        animation = Animation(sim, args.duration)
+        animation.show()
+
+
+
     plot_results(sim)
-    #calling the animation class to plot the animation
-    animation = Animation(sim, args.duration)
-    animation.show()
+
 
 #----------------------------------------------------------------------------#
 #                  Simulation class                                          #
@@ -172,7 +184,7 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers,month,path_system):
+    def __init__(self, entry, duration, max_shoppers,month,path_system, prob_of_i,chance_person_wears_mask):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
@@ -182,7 +194,7 @@ class simulation:
         self.time_array = np.arange(self.duration)
         self.prob_of_i = prob_of_i
         self.chance_person_wears_mask = chance_person_wears_mask
-        self.level_of_covid_in_area = level_of_covid_in_area
+        self.level_of_covid_in_area = 0.5
 
 
     def update(self): 
@@ -207,11 +219,7 @@ class simulation:
         self.time_step += 1
 
 
-        #-----------whats going on here?  ------------------
-        #stores all the time steps in an array
-        simulation.time_step_counter.append(self.time_step)
-        #stores the number of people at each time step in an array
-        simulation.people_at_time_step.append(len(self.shoppers))
+
 
 
 
@@ -533,7 +541,6 @@ def plot_results(simulation):
     # pulling arrays from the simulation inorder to plot
     x = simulation.time_array
     x2 = simulation.shopping_time
-    shoppers_at_step = simulation.people_at_time_step
     sus_w_mask = np.cumsum(simulation.sus_w_mask_t)
     sus_wo_mask = np.cumsum(simulation.sus_wo_mask_t)
     inf_w_mask_t = np.cumsum(simulation.inf_w_mask_t)
@@ -542,7 +549,7 @@ def plot_results(simulation):
     status = simulation.left_shop
     #setting up the plots
     fig, axs = plt.subplots(2, 2, figsize=(12,12)) # making a large figure to show the plots
-    axs[0, 0].plot(x, shoppers_at_step,'-b') # plotting the total number of shoppers at every time step
+    axs[0, 0].plot(x, sus_w_mask,'-b') # plotting the total number of shoppers at every time step
     axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
     axs[0,0].legend(['Number of Shoppers'])
     #axs[0, 1].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
