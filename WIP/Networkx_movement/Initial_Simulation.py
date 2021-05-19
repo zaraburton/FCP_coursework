@@ -51,7 +51,7 @@ def main(*args):
 
 
     #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask)
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
     #starts out with 1 shopper 
     sim.add_new_shopper(1)
     results(sim, args.duration)
@@ -180,7 +180,7 @@ class simulation:
     #vector to contain length of shopping time per person
     shopping_time = []
 
-    def __init__(self, entry, duration, max_shoppers, path_system, prob_of_i,chance_person_wears_mask):
+    def __init__(self, entry, duration, max_shoppers, path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area):
         # Basic simulation perameters:
         self.max_entry = entry  #max number of people who can enter at once
         self.duration = duration
@@ -190,7 +190,7 @@ class simulation:
         self.time_array = np.arange(self.duration)
         self.prob_of_i = prob_of_i
         self.chance_person_wears_mask = chance_person_wears_mask
-        self.level_of_covid_in_area = 0.5
+        self.level_of_covid_in_area = level_of_covid_in_area
 
 
     def update(self): 
@@ -268,6 +268,8 @@ class simulation:
 
         return number_of_shoppers_entering
 
+
+
     def add_new_shopper(self, number_of_shoppers_entering):
         """adds new person the the shop"""
         #creates a new instance of a person thats either
@@ -297,7 +299,6 @@ class simulation:
                     # add infected person without mask
                     mask = 0
                     simulation.shoppers.append(person((0,0),3,speed, mask))
-
 
             #add suseptible person
             else:
