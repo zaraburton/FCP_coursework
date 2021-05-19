@@ -55,7 +55,8 @@ def main(*args):
     #starts out with 1 shopper 
     sim.add_new_shopper(1)
     results(sim, args.duration)
-
+    plot_results(sim, args.duration)
+    plt.show()
     #plotting the graphs showing simulation results
     # Plot or animation?
     if args.plot:
@@ -461,8 +462,9 @@ class person:
 
             #takes info from them
             leaving_info = self.SIR_level
-            shopping_time = self.shop_time
-            simulation.shopping_time.append(shopping_time)
+            shopping_time_p = len(self.path)
+            shopping_time_p = self.shop_time
+            simulation.shopping_time.append(shopping_time_p)
             #and stores it in the left_shop array in the simulation class
             simulation.left_shop.append(leaving_info)
             #then remove them from the list of current shoppers 
@@ -557,6 +559,7 @@ def plot_results(simulation,duration):
     x = np.arange(duration)
     x2 = simulation.shopping_time
     shoppers_at_step = simulation.people_at_time_step
+    print(shoppers_at_step)
     sus_w_mask = simulation.sus_w_mask_t
     sus_wo_mask = simulation.sus_wo_mask_t
     inf_w_mask_t = simulation.inf_w_mask_t
