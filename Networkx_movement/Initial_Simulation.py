@@ -47,10 +47,65 @@ def main(*args):
 
 class simulation:
 
+    """Simulation of the spread of covid within a matrix, representing a supermarket.
+
+    The supermarket is represented as an 8 x 7 grid. Once a person enters the shop, there position on the grid
+    is denoted by a 1 at that location. There are two layers to this grid: shoppers wearing a mask, and shoppers without a mask.
+
+    The state of one layer of the grid (shoppers wearing masks for example) might look like this:
+
+    0 0 0 0 0 0 1 1
+    0 1 0 0 1 0 2 0
+    0 2 0 0 1 0 1 0
+    0 0 0 0 0 0 1 1
+    0 1 0 0 1 0 2 0
+    0 2 0 0 1 0 1 0
+    1 0 0 0 0 0 0 0
+
+    There is one entrance at the bottom left and two exits at the top right of the grid. The number in each 
+    position denotes the number of people in each location within the shop.
+
+    The update() method advances the simulation by one timestep (minute), moving a person along their 'path' on the grid.
+    
+    The update_infection_risk() method assigns a risk to each shop node based on whether there is a person present at
+    that node, and based on whether they are in the layer storing people with masks, or in the layer storing people
+    without masks. The risk of infection is set and halved for people wearing a mask.
+    The method then adds these layers to the person array which stores all five possible states:
+    susceptible (with and without a mask), infected (with and without a mask) and removed (caught covid).
+    
+    The add_new_shopper() method introduces a new shopper into the store simulation.
+
+    
+
+    Example
+    =======
+
+    Create a simulation with the following parameters:
+    - Up to two people can enter the shop at any one time
+    - The simulation lasts for 100 minutes
+    - Up to 12 shoppers can be in the shop at once
+    - The simulation is run in November
+    - No path system is in place
+
+    >>> sim = Simulation(3, 100, 12, 1120, 0) # not quite sure how to input the months??
+    >>> sim.add_new_shopper()  # adds a new shopper
+    >>> results(sim, args.duration)
+    {Number of people who've left the shop:32, Out of those, 93.75% entered infected, 
+    Out of those initially suseptible 0.0% caught covid, Average time in shop 23.375
+    minutes.}
+
+    """
+
+
     #vector that will contain SIR status of each person who leaves the shop
     left_shop = []
     #vector what contains instance of each person currently in the shop
     shoppers = []
+    #array storing each time step
+    time_step_counter = []
+    #array storing number of people in shop at each time step
+    people_at_time_step = []
+
 
     #vector to count number of people who are in shop
     shopping_count = []
@@ -139,6 +194,10 @@ class simulation:
         
         #add one to the time step counter and record the time step total
         self.time_step += 1
+        #stores all the time steps in an array
+        simulation.time_step_counter.append(self.time_step)
+        #stores the number of people at each time step in an array
+        simulation.people_at_time_step.append(len(self.shoppers))
 
 
     def update_infection_risk(self):
@@ -244,13 +303,43 @@ class simulation:
 #----------------------------------------------------------------------------#
 
 class person:
-    # Array representing network for aldi layout
-    # it has 5 "levels" to it, each one is 8x7 where each element represents a shop node from the network x shop diagram
-    # in level 0: each element records the number of people at that node who are suseptible wearing a mask
-    # in level 1: each element records the number of people at that node who are suseptible and not wearing a mask
-    # in level 2: each element records the number of people at that node who are infected & wearing a mask
-    # in level 3: each element records the number of people at that node infected and not wearing a mask
-    # in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
+
+    """ Class representing the shoppers within the supermarket.
+        
+        The cords array has 5 layers, each of size 8 x 7, which contain the number of people at each position within the shop.
+        Each layer represents a Covid status:
+        in level 0: each element records the number of people at that node who are suseptible wearing a mask
+        in level 1: each element records the number of people at that node who are suseptible and not wearing a mask
+        in level 2: each element records the number of people at that node who are infected & wearing a mask
+        in level 3: each element records the number of people at that node infected and not wearing a mask
+        in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
+
+        The __init__() method defines all of the attributes of a shopper:
+        - their position
+        - current step on their path journey
+        - their covid status
+        - their speed of movement (based on the length of their path) and whether there is a one-way system in place
+        - whether or not they are wearing a mask
+
+        The move_path() method moves the person along their allocated path. If they are at the end of their path, 
+        they (along with their attributes) are removed from the simulation.
+
+        The new_SIR_level() method simulates people becoming infected and hence being moved to level 4 of the cords array
+        i.e. their SIR_level becomes 4.
+
+        The change_status() method ... # not too sure
+
+        The results() method runs the simulation for as many time steps as the duration and obtains the following results:
+        - number of people who've left the shop
+        - number of peoplpe who left the shop that were intially infected
+        - % of people who left the shop that were intially infected
+        - number of people who did not catch covid
+        - number of people who left that caught covid while shopping
+        - number of people who've left that were initially suseptible
+        - % of people who entered the shop suseptile who left with covid
+        - average shopping time
+    """
+    
 
     cords = np.zeros((5,8,7))
 
@@ -396,7 +485,7 @@ def plot_results(simulation):
     # pulling arrays from the simulation inorder to plot
     x = simulation.time_array
     x2 = simulation.shopping_time
-    total_shoppers = np.cumsum(simulation.shopping_count)
+    shoppers_at_step = simulation.people_at_time_step
     sus_w_mask = np.cumsum(simulation.sus_w_mask_t)
     sus_wo_mask = np.cumsum(simulation.sus_wo_mask_t)
     inf_w_mask_t = np.cumsum(simulation.inf_w_mask_t)
@@ -405,9 +494,9 @@ def plot_results(simulation):
     status = simulation.left_shop
     #setting up the plots
     fig, axs = plt.subplots(2, 2, figsize=(12,12)) # making a large figure to show the plots
-    axs[0, 0].plot(x, total_shoppers,'o') # plotting the total number of shoppers at every time step
-    axs[0, 0].set_title('Total shoppers through the shop during the time period') # setting title of overall shoppers in shop
-    axs[0,0].legend(['Total shoppers'])
+    axs[0, 0].plot(x, shoppers_at_step,'-b') # plotting the total number of shoppers at every time step
+    axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
+    axs[0,0].legend(['Number of Shoppers'])
     axs[0, 1].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
     axs[0, 1].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
     axs[0, 1].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
