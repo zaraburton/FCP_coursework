@@ -501,8 +501,13 @@ def results(simulation, duration):
     num_caught_covid = simulation.left_shop.count(4)
     # number of people who've left that were initially suseptible
     num_initially_suseptible = num_not_infected + num_caught_covid
+
+    # to avoid dividing by zero
+    if num_caught_covid == 0:
+        num_caught_covid += 0.001 
     # calculate % of people who entered the shop suseptile who left with covid
     percentage_who_caught_covid = (num_caught_covid / num_initially_suseptible)*100
+    
     #function to calculate average of a list
     def Average(lst):
         return mean(lst)
