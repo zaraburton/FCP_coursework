@@ -65,24 +65,26 @@ class simulation:
     caught_cov = []
 
     # Status codes to store in the numpy array representing the state.
-    ONE_PERSON = 1
-    TWO_PEOPLE = 2
-    THREE_PEOPLE = 3
-    FOUR_PEOPLE = 4
-
+    SUSCEPTABLE_W_MASK = 0
+    SUSCEPTABLE_WO_MASK = 1
+    INFECTED_W_MASK = 2
+    INFECTED_WO_MASK = 3
+    CAUGHT_COV_IN_SHOP = 4
 
     STATUSES = {
-        'Single person': ONE_PERSON,
-        'Two people within the same space': TWO_PEOPLE,
-        'Three people within the same space': THREE_PEOPLE,
-        'Four people within the same space': FOUR_PEOPLE,
+        'Susceptable with a mask': SUSCEPTABLE_W_MASK,
+        'Susceptable without a mask': SUSCEPTABLE_WO_MASK,
+        'Infected with a mask': INFECTED_W_MASK,
+        'Infected without a mask': INFECTED_WO_MASK,
+        'Caught COVID in shop': CAUGHT_COV_IN_SHOP,
     }
 
     COLOURMAP = {
-        'Single person': 'green',
-        'Two people within the same space': 'red',
-        'Three people within the same space': 'magenta',
-        'Four people within the same space': 'magenta',
+        'Susceptable with a mask': 'yellow',
+        'Susceptable without a mask': 'green',
+        'Infected with a mask': 'red',
+        'Infected without a mask': 'magenta',
+        'Caught COVID in shop': 'cyan',
     }
     COLOURMAP_RGB = {
         'yellow': (255, 255, 0),
@@ -231,12 +233,14 @@ class simulation:
 
     def get_node_status(self):
 
-        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4]
-        total_people = np.sum(simgrid)
-        percentages = {}
 
+        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4]
+        state = person.cords
+        total_people = np.sum(simgrid)
+
+        percentages = {}
         for status, statusnum in self.STATUSES.items():
-            count = np.count_nonzero(simgrid == statusnum)
+            count = np.sum(simgrid[statusnum])
             percentages[status] = 100 * count / total_people
         return percentages
 #----------------------------------------------------------------------------#
@@ -452,7 +456,7 @@ class Animation:
         self.simulation = simulation
         self.duration = duration
 
-        self.figure = plt.figure(figsize=(12, 4))
+        self.figure = plt.figure(figsize=(16, 4))
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
         self.axes_line = self.figure.add_subplot(1, 2, 2)
         self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
@@ -462,6 +466,7 @@ class Animation:
         """Run the animation on screen"""
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
                 init_func = self.init, blit=True, interval=200,repeat = False)
+        plt.tight_layout()
         plt.show()
 
     def init(self):
@@ -518,12 +523,12 @@ class LineAnimation:
         self.ydata = {status: [] for status in simulation.STATUSES}
         self.line_mpl = {}
         for status, colour in simulation.COLOURMAP.items():
-            [line] = self.axes.plot([], [], color=colour, label=status, linewidth=1)
+            [line] = self.axes.plot([], [],color=colour, label=status, linewidth=1) # this would be better as a stack plot however cant be animated
             self.line_mpl[status] = line
-        self.axes.legend(prop={'size':'x-small'}, loc='center right')
+        self.axes.legend(prop={'size':'x-small'}, loc=(1.04,0))
         self.axes.set_xlabel('Time steps (minutes)')
         self.axes.set_ylabel('%', rotation=0)
-        self.axes.set_title('Crowding in the shop - proportion of people in the same node')
+        self.axes.set_title('Proportion of people in the shop with each infection level')
 
     def init(self):
         self.axes.set_xlim([0, self.duration])
