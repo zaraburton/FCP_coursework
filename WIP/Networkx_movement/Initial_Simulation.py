@@ -211,7 +211,7 @@ class simulation:
         # adding the new people to the shop
         self.add_new_shopper(number_of_new_shoppers)
 
-        simulation.people_at_time_step.append(np.sum(person.cords))
+        simulation.people_at_time_step.append(len(self.shoppers))
 
 
         simulation.sus_wo_mask_t.append(np.sum(person.cords[0]))
