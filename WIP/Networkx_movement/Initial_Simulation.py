@@ -55,13 +55,15 @@ def main(*args):
     #starts out with 1 shopper 
     sim.add_new_shopper(1)
     results(sim, args.duration)
+    plot_results(sim,args.duration)
+    plt.show()
     #plotting the graphs showing simulation results
 # Plot or animation?
     if args.plot:
         plot_results(sim, args.duration)
         plt.show()
     else:
-    # calling the animation class to plot the animation
+    # calling the animation class to plot the animation if the user hasnt specified they want the plots
         animation = Animation(sim, args.duration)
         animation.show()
 
@@ -209,8 +211,15 @@ class simulation:
         # adding the new people to the shop
         self.add_new_shopper(number_of_new_shoppers)
 
+        simulation.people_at_time_step.append(len(self.shoppers))
 
-        self.get_shop_numbers()
+
+        simulation.sus_wo_mask_t.append(np.sum(person.cords[0]))
+        simulation.sus_w_mask_t.append(np.sum(person.cords[1]))
+        simulation.inf_w_mask_t.append(np.sum(person.cords[2]))
+        simulation.inf_wo_mask_t.append(np.sum(person.cords[3]))
+        simulation.caught_cov.append(np.sum(person.cords[4]))
+        #self.get_shop_numbers()
 
         simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
         #add one to the time step counter
@@ -333,7 +342,7 @@ class simulation:
             simulation.infected = (inf_mas + inf_no_mask + caught_covid)  # counting infected people for animation
             no_sus_at_t = np.sum(sus_mask) + np.sum(sus_no_mask)
             no_inf_at_t = np.sum(inf_mas) + np.sum(inf_no_mask)
-            shoppers_total = no_sus_at_t + no_inf_at_t
+            shoppers_total = np.sum(person.cords)
             simulation.shopping_count.append(shoppers_total)
 
             # calculation the susceptible people and storing in array
@@ -548,29 +557,28 @@ def plot_results(simulation,duration):
     # pulling arrays from the simulation inorder to plot
     x = np.arange(duration)
     x2 = simulation.shopping_time
+    shoppers_at_step = simulation.people_at_time_step
+    print(shoppers_at_step)
     sus_w_mask = simulation.sus_w_mask_t
-    sus_wo_mask = np.cumsum(simulation.sus_wo_mask_t)
-    inf_w_mask_t = np.cumsum(simulation.inf_w_mask_t)
-    inf_wo_mask_t = np.cumsum(simulation.inf_wo_mask_t)
-    caught_covid_t = np.cumsum(simulation.caught_cov)
+    sus_wo_mask = simulation.sus_wo_mask_t
+    inf_w_mask_t = simulation.inf_w_mask_t
+    inf_wo_mask_t = simulation.inf_wo_mask_t
+    caught_covid_t = simulation.caught_cov
     status = simulation.left_shop
     #setting up the plots
-    fig, axs = plt.subplots(2, 2, figsize=(12,12)) # making a large figure to show the plots
+    fig, axs = plt.subplots(2, 2, figsize=(12,8)) # making a large figure to show the plots
     #axs[0, 0].plot(x, sus_w_mask,'-b') # plotting the total number of shoppers at every time step
     #axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
     #axs[0,0].legend(['Number of Shoppers'])
-    axs[0, 0].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
-    #axs[0, 0].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
-    #axs[0, 0].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
-    #axs[0, 0].plot(x, inf_w_mask_t, '--k') # plotting infected with mask with dashed line
-    #axs[0, 0].plot(x, caught_covid_t, '--r') # plotting infected with mask with dashed line
-    #axs[0,0].legend(['Susceptible with a mask', 'Susceptible without a mask', 'Infected without a mask', 'Infected with a mask' , 'Caught COVID within the shop'],loc=(1.04,0))
+    axs[0, 0].plot(x, shoppers_at_step, '-b') # plotting susceptible with full blue line
+    axs[0, 0].set_title('Number of People in the shop at each time step') # labelling the plot
+    axs[0,0].legend(['Number of Shoppers'])
     axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t,
                         labels=['Susceptable w mask', 'Susceptable wo mask', 'Infected w mask', 'Infected wo mask',
                                 'Caught COV in shop'])
     axs[0,1].legend()
     axs[0, 1].set_title('Proportion of each SIR level when leaving')
-    axs[0, 1].set_title('Shoppers various levels of infection') # setting title
+    axs[0, 1].set_title('Cumulative shoppers with respective status') # setting title
     axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers with each SIR')
     axs[1, 0].plot(x, caught_covid_t, ':r')
     axs[1, 0].set_title('Number of people who have caught covid in the shop')
@@ -660,7 +668,7 @@ class GridAnimation:
         # colormap used by imshow
         colors = [self.image.cmap(self.image.norm(value)) for value in values]
         # create a patch (proxy artist) for every color
-        patches = [mpatches.Patch(color=colors[i], label="Number of infected people in the space: {l}".format(l=labels[i])) for i in range(len(values))]
+        patches = [mpatches.Patch(color=colors[i], label="No infected people in the node: {l}".format(l=labels[i])) for i in range(len(values))]
         # put those patched as legend-handles into the legend
         self.axes.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2)
 
