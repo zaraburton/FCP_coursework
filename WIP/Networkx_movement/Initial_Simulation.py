@@ -55,7 +55,8 @@ def main(*args):
     #starts out with 1 shopper 
     sim.add_new_shopper(1)
     results(sim, args.duration)
-
+    plot_results(sim, args.duration)
+    plt.show()
     #plotting the graphs showing simulation results
     # Plot or animation?
     if args.plot:
@@ -275,7 +276,7 @@ class simulation:
         #in the area" and adds them to the list of shoppers
 
         shoppers_to_add = np.arange(number_of_shoppers_entering)
-        print(shoppers_to_add)
+
 
         if self.path_system == 2: # when user has specified 1 way simulation
             speed = 2 # assign one way paths
@@ -461,8 +462,9 @@ class person:
 
             #takes info from them
             leaving_info = self.SIR_level
-            shopping_time = self.shop_time
-            simulation.shopping_time.append(shopping_time)
+            shopping_time_p = len(self.path)
+            shopping_time_p = self.shop_time
+            simulation.shopping_time.append(shopping_time_p)
             #and stores it in the left_shop array in the simulation class
             simulation.left_shop.append(leaving_info)
             #then remove them from the list of current shoppers 
@@ -557,7 +559,6 @@ def plot_results(simulation,duration):
     x = np.arange(duration)
     x2 = simulation.shopping_time
     shoppers_at_step = simulation.people_at_time_step
-    print(shoppers_at_step)
     sus_w_mask = simulation.sus_w_mask_t
     sus_wo_mask = simulation.sus_wo_mask_t
     inf_w_mask_t = simulation.inf_w_mask_t
@@ -570,24 +571,23 @@ def plot_results(simulation,duration):
     #axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
     #axs[0,0].legend(['Number of Shoppers'])
     axs[0, 0].plot(x, shoppers_at_step, '-b') # plotting susceptible with full blue line
-    axs[0, 0].set_title('Number of People in the shop at each time step') # labelling the plot
-    axs[0,0].legend(['Number of Shoppers'])
+    axs[0, 0].set_title('Number of people in the shop at each time step') # labelling the plot
+    axs[0,0].legend(['Number of shoppers'])
     axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t,
                         labels=['Susceptable w mask', 'Susceptable wo mask', 'Infected w mask', 'Infected wo mask',
                                 'Caught COV in shop'])
     axs[0,1].legend()
-    axs[0, 1].set_title('Proportion of each SIR level when leaving')
-    axs[0, 1].set_title('Cumulative shoppers with respective status') # setting title
-    axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers with each SIR')
+    axs[0, 1].set_title('Proportion of each people with each SIR at shop at time step')
+    axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Number of shoppers with each SIR in the shop at each time step')
     axs[1, 0].plot(x, caught_covid_t, ':r')
-    axs[1, 0].set_title('Number of people who have caught covid in the shop')
-    axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers')
+    axs[1, 0].set_title('Number of people who caught covid in the shop at each time step')
+    axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Shoppers')
     axs[1,0].legend(['People who caught COVID'])
-    axs[1, 1].scatter(x2, status)
-    axs[1, 1].set_title('Proportion of each SIR level when leaving')
-    axs[1,1].set(xlabel='Time in the shop(minutes)', ylabel='Cumulative shoppers')
-    axs[1,1].set_yticks((0, 1, 2, 3, 4))
-    axs[1,1].set_yticklabels(("Sus wo mask", "Sus w mask", "Infected w mask", "Infected wo a mask", "Caught covid within the shop"))
+    axs[1, 1].plot(x, inf_wo_mask_t)
+    axs[1, 1].set_title('Infected people without masks in shop at each time step')
+    axs[1,1].set(xlabel='Times steps (minutes)', ylabel='Shoppers')
+    #axs[1,1].set_yticks((0, 1, 2, 3, 4))
+    #axs[1,1].set_yticklabels(("Sus wo mask", "Sus w mask", "Infected w mask", "Infected wo a mask", "Caught covid within the shop"))
     fig.tight_layout()
 
 
