@@ -57,16 +57,14 @@ def main(*args):
     results(sim, args.duration)
     #plotting the graphs showing simulation results
 # Plot or animation?
-    if args.plot:
-        plot_results(sim)
-    else:
-        # calling the animation class to plot the animation
-        animation = Animation(sim, args.duration)
-        animation.show()
-
-
-
-    plot_results(sim)
+    #if args.plot:
+    #    plot_results(sim, args.duration)
+    #else:
+    # calling the animation class to plot the animation
+    animation = Animation(sim, args.duration)
+    animation.show()
+    plot_results(sim,args.duration)
+    plt.show()
 
 
 #----------------------------------------------------------------------------#
@@ -133,8 +131,6 @@ class simulation:
     time_step_counter = []
     #array storing number of people in shop at each time step
     people_at_time_step = []
-
-
     #vector to count number of people who are in shop
     shopping_count = []
     #vector to record time steps
@@ -213,19 +209,18 @@ class simulation:
 
         # adding the new people to the shop
         self.add_new_shopper(number_of_new_shoppers)
-        
 
-        #add one to the time step counter and record the time step total
+
+        self.get_shop_numbers()
+
+        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
+        #add one to the time step counter
+
         self.time_step += 1
 
 
-
-
-
-
-
-
     def update_infection_risk(self):
+
         """updates matrix for risk of infection at each node in the shop"""
         #number of infected people ate ach shop node w/ mask
         i_w_mask = person.cords[2] # and again for 3 but without compensating for masks
@@ -241,42 +236,12 @@ class simulation:
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
         risk_in_mask = risk_no_mask / 2
 
+
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
 
-        #--------------------------------please put into own function??----------------------------------------------------#
-        # capturing the state of the shop nodes for animation
-        ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
-        # capturing the state of the shop nodes for use in animation
-        sus_no_mask = person.cords[0]
-        simulation.sus_no_mask = sus_no_mask
-        sus_mask = person.cords[1]
-        simulation.sus_mask = sus_mask
-        inf_mas = person.cords[2]
-        simulation.inf_mas = inf_mas
-        inf_no_mask = person.cords[3]
-        simulation.inf_no_mask = inf_no_mask
-        caught_covid = person.cords[4]
-        simulation.caught_covid = caught_covid
-        simulation.susceptible = (sus_no_mask + sus_mask) # counting susceptible people for animation
-        simulation.infected = (inf_mas + inf_no_mask + caught_covid) # counting infected people for animation
-        no_sus_at_t = np.sum(sus_mask)+np.sum(sus_no_mask)
-        no_inf_at_t = np.sum(inf_mas) + np.sum(inf_no_mask)
-        shoppers_total = no_sus_at_t + no_inf_at_t
-        simulation.shopping_count.append(shoppers_total)
 
-        # calculation the susceptible people and storing in array
-        sus_no_maskt = np.sum(sus_no_mask)
-        simulation.sus_wo_mask_t.append(sus_no_maskt)
-        sus_w_maskt = np.sum(sus_mask)
-        simulation.sus_w_mask_t.append(sus_w_maskt)
-        inf_no_maskt = np.sum(inf_no_mask)
-        simulation.inf_wo_mask_t.append(inf_no_maskt)
-        inf_w_maskt = np.sum(inf_mas)
-        simulation.inf_w_mask_t.append(inf_w_maskt)
 
-        caught = np.sum(caught_covid)
-        simulation.caught_cov.append(caught)
 
     def get_number_of_shoppers_entering(self):
         """finding the number of people who can enter the shop in this time step"""
@@ -312,6 +277,8 @@ class simulation:
             speed = 0
         elif self.path_system == 3: # when user has not specified a speed of shopper
             speed = randint(0,1)  # assign shoppers slow and quick paths randomly
+
+
 
 
         #add infected person
@@ -350,6 +317,42 @@ class simulation:
             percentages[status] = 100 * count / total_people
         return percentages
 
+    def get_shop_numbers(self):
+        if self.time_step < self.duration:
+            sus_no_mask = person.cords[0]
+            simulation.sus_no_mask = sus_no_mask
+            sus_mask = person.cords[1]
+            simulation.sus_mask = sus_mask
+            inf_mas = person.cords[2]
+            simulation.inf_mas = inf_mas
+            inf_no_mask = person.cords[3]
+            simulation.inf_no_mask = inf_no_mask
+            caught_covid = person.cords[4]
+            simulation.caught_covid = caught_covid
+
+            simulation.susceptible = (sus_no_mask + sus_mask)  # counting susceptible people for animation
+            simulation.infected = (inf_mas + inf_no_mask + caught_covid)  # counting infected people for animation
+            no_sus_at_t = np.sum(sus_mask) + np.sum(sus_no_mask)
+            no_inf_at_t = np.sum(inf_mas) + np.sum(inf_no_mask)
+            shoppers_total = no_sus_at_t + no_inf_at_t
+            simulation.shopping_count.append(shoppers_total)
+
+            # calculation the susceptible people and storing in array
+
+            sus_no_maskt = np.sum(sus_no_mask)
+            simulation.sus_wo_mask_t.append(sus_no_maskt)
+
+            sus_w_maskt = np.sum(sus_mask)
+            simulation.sus_w_mask_t.append(sus_w_maskt)
+
+            inf_no_maskt = np.sum(inf_no_mask)
+            simulation.inf_wo_mask_t.append(inf_no_maskt)
+
+            inf_w_maskt = np.sum(inf_mas)
+            simulation.inf_w_mask_t.append(inf_w_maskt)
+
+            caught = np.sum(caught_covid)
+            simulation.caught_cov.append(caught)
 
 #----------------------------------------------------------------------------#
 #                  Person class                                              #
@@ -501,6 +504,11 @@ def results(simulation, duration):
     while simulation.time_step < duration:
         #rgb_matrix = person.cords[0]
         # uncomment this^^^ too see how people move through the shop in the cords array
+        # --------------------------------please put into own function??----------------------------------------------------#
+        # capturing the state of the shop nodes for animation
+        ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
+        # capturing the state of the shop nodes for use in animation
+
         simulation.update()
 
     #count the number of people who've left the shop
@@ -537,11 +545,11 @@ def results(simulation, duration):
     print("Average time in shop", average_shop_time, "minutes in the shop")
 
 #creating a new function to plot still graphs of the results
-def plot_results(simulation):
+def plot_results(simulation,duration):
     # pulling arrays from the simulation inorder to plot
-    x = simulation.time_array
+    x = np.arange(duration)
     x2 = simulation.shopping_time
-    sus_w_mask = np.cumsum(simulation.sus_w_mask_t)
+    sus_w_mask = simulation.sus_w_mask_t
     sus_wo_mask = np.cumsum(simulation.sus_wo_mask_t)
     inf_w_mask_t = np.cumsum(simulation.inf_w_mask_t)
     inf_wo_mask_t = np.cumsum(simulation.inf_wo_mask_t)
@@ -549,15 +557,15 @@ def plot_results(simulation):
     status = simulation.left_shop
     #setting up the plots
     fig, axs = plt.subplots(2, 2, figsize=(12,12)) # making a large figure to show the plots
-    axs[0, 0].plot(x, sus_w_mask,'-b') # plotting the total number of shoppers at every time step
-    axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
-    axs[0,0].legend(['Number of Shoppers'])
-    #axs[0, 1].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
-    #axs[0, 1].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
-    #axs[0, 1].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
-    #axs[0, 1].plot(x, inf_w_mask_t, '--k') # plotting infected with mask with dashed line
-    #axs[0, 1].plot(x, caught_covid_t, '--r') # plotting infected with mask with dashed line
-    #axs[0,1].legend(['Susceptible with a mask', 'Susceptible without a mask', 'Infected without a mask', 'Infected with a mask' , 'Caught COVID within the shop'],loc=(1.04,0))
+    #axs[0, 0].plot(x, sus_w_mask,'-b') # plotting the total number of shoppers at every time step
+    #axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
+    #axs[0,0].legend(['Number of Shoppers'])
+    axs[0, 0].plot(x, sus_w_mask, '-b') # plotting susceptible with full blue line
+    #axs[0, 0].plot(x, sus_wo_mask, '-g') # plotting wo mask with full green line
+    #axs[0, 0].plot(x, inf_wo_mask_t, '--c') # plotting infected with dashed cyan line
+    #axs[0, 0].plot(x, inf_w_mask_t, '--k') # plotting infected with mask with dashed line
+    #axs[0, 0].plot(x, caught_covid_t, '--r') # plotting infected with mask with dashed line
+    #axs[0,0].legend(['Susceptible with a mask', 'Susceptible without a mask', 'Infected without a mask', 'Infected with a mask' , 'Caught COVID within the shop'],loc=(1.04,0))
     axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t,
                         labels=['Susceptable w mask', 'Susceptable wo mask', 'Infected w mask', 'Infected wo mask',
                                 'Caught COV in shop'])
@@ -636,10 +644,7 @@ class GridAnimation:
     def __init__(self, axes, simulation):
         self.axes = axes
         self.simulation = simulation
-        susceptible = self.simulation.susceptible
         infected = self.simulation.infected
-        caught_covid = simulation.caught_covid
-        #suseptable = self.simulation.susceptible
         self.shop = np.empty((infected.shape))
         self.shop[infected ==1 ] = 1
         self.shop[infected == 2] = 2
