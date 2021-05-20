@@ -178,25 +178,36 @@ def plot_results(chosen_sim_arg):
     no_mask_results = results[1]
     overall_results = results[2]
 
-    # once all simulations have run 
-    # plot results as scatter plot
-    fig=plt.figure()
-    ax=fig.add_subplot(1, 1, 1)
-
-
-    if chosen_sim_arg == 0 or 2 or 3:
+    #specifying if double or dingle line plot 
+    two_line = 0
+    if chosen_sim_arg < 4:
+        two_line += 1
+    if chosen_sim_arg == 1:
+        two_line -= 1
+    
+    print(two_line)
+    # once all simulations have run, plot results as scatter plot
+    if two_line == 1:
+        fig=plt.figure()
+        ax=fig.add_subplot(1.3, 1, 1)
         ax.plot(variable_values, no_mask_results, label = "Not wearing a mask", color='r')
-        ax.plot(variable_values, mask_results, label = "Wearing a mask", color='b')
+        ax.plot(variable_values, mask_results, label = "Wearing a mask", color='b')      
         ax.legend(['No mask', 'Mask'], loc = 'lower right')
-    else:
-        ax.plot(variable_values, overall_results, color='green')    
-   
+        x_axis_label = get_plot_labels(chosen_sim_arg)[0]
+        ax.set_xlabel(x_axis_label)
+        ax.set_ylabel('Probability of catching COVID (%)')
+        title = get_plot_labels(chosen_sim_arg)[1]
+        ax.set_title(title )
 
-    x_axis_label = get_plot_labels(chosen_sim_arg)[0]
-    ax.set_xlabel(x_axis_label)
-    ax.set_ylabel('Risk of catching COVID')
-    title = get_plot_labels(chosen_sim_arg)[1]
-    ax.set_title(title )
+    else:
+        fig=plt.figure()
+        ax=fig.add_subplot(1, 1, 1)
+        ax.plot(variable_values, overall_results, color='green')       
+        x_axis_label = get_plot_labels(chosen_sim_arg)[0]
+        ax.set_xlabel(x_axis_label)
+        ax.set_ylabel('Probability of catching COVID (%)')
+        title = get_plot_labels(chosen_sim_arg)[1]
+        ax.set_title(title )
 
     plt.show()
 
