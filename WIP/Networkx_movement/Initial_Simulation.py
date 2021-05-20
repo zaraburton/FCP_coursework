@@ -17,7 +17,7 @@ import Networkx_aldi_layout as lay
 import Infection_rate_data as inf_rate
 
 
-def main(*args):
+def main(args):
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     parser = argparse.ArgumentParser(description='Animate an epidemic')
@@ -27,45 +27,30 @@ def main(*args):
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=30,
                     help='Maximum number of shoppers in the shop')
-    parser.add_argument('--month', metavar='myy', type=int, default=1120,
+    parser.add_argument('--month', metavar='myy', type=int,
                     help='The month to use to represent the infection rate where 320 is March 2020 (from 320 - 421)')
-    parser.add_argument('--path_system', metavar='N', type=int, default=0,
+    parser.add_argument('--path_system', metavar='N', type=int, default=1,
                     help='The type of path system 0 = slow walker 1 = quick walker 2 = one way path system, 3 = mixed scenario')
-    parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
+    parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.4,
                     help='Probability of any individual in the area being infected')
     parser.add_argument('--plot', action='store_true',
                     help='Generate plots instead of animation')
-    parser.add_argument('--prompt', action='store_true',
-                    help='Prompts for input arguments and retrieve animation')
     args = parser.parse_args(args)
 
     #TD: make parser args for next variables
-    prob_of_i = 0.2
-    chance_person_wears_mask = 0.4
 
     #TD: something to say you cant have level of covid and month given at same time? or just pick on or the other? (Will automatically go by the month if thats given)
-    # set level_of_covid_in_area (prob of infected person entering the shop) as infection rate for that month
+    #set level_of_covid_in_area (prob of infected person entering the shop) as infection rate for that month
     if args.month:
         level_of_covid_in_area = inf_rate.infection_rate(args.month)
     else:
         level_of_covid_in_area = args.level_of_covid
-
-    #if user wants to be prompted
-    if args.prompt:
-        max_entry, duration, max_shoppers, path_system, month = get_user_input()
-        level_of_covid_in_area = inf_rate.infection_rate(month)
-        prob_of_i = 0.2
-        chance_person_wears_mask = 0.4
-        sim = simulation(max_entry, duration, max_shoppers, path_system, prob_of_i,chance_person_wears_mask,level_of_covid_in_area)
-        sim.add_new_shopper(1)
-        results(sim, duration)
-    else:
         #running the simulation based off of argument inputs instead
-        sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
-        sim.add_new_shopper(1)
-        results(sim, args.duration)
-
-
+    prob_of_i = 0.2
+    chance_person_wears_mask = 0.4
+    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
+    sim.add_new_shopper(1)
+    results(sim, args.duration)
 
     #plotting the graphs or animation based off of user input showing simulation results
     if args.plot:
@@ -75,6 +60,8 @@ def main(*args):
     # calling the animation class to plot the animation if the user hasnt specified they want the plots
         animation = Animation(sim, args.duration)
         animation.show()
+
+
 
 
 #----------------------------------------------------------------------------#
@@ -238,7 +225,7 @@ class simulation:
         #simulation.caught_cov.append(np.sum(self.person.cords[4]))
         self.get_shop_numbers()
 
-        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
+        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4] + person.cords[5])
         #add one to the time step counter
 
         self.time_step += 1
@@ -247,19 +234,22 @@ class simulation:
     def update_infection_risk(self):
 
         """updates matrix for risk of infection at each node in the shop"""
-        #number of infected people ate ach shop node w/ mask
-        i_w_mask = person.cords[2] # and again for 3 but without compensating for masks
+        #number of infected people at each shop node w/ mask
+        i_w_mask = person.cords[2] 
         #number of infected people ate ach shop node w/o mask
         i_no_mask = person.cords[3]
 
-        prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
-        reduced_i_prob_w_mask = prob_of_i / 2 #chance of a person w/o mask catching covid from infected person w/ mask
+     #   prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
+        reduced_i_prob_w_mask = self.prob_of_i / 4 #chance of a person w/o mask catching covid from infected person w/ mask
 
         prob_of_i_from_i_w_mask = reduced_i_prob_w_mask * i_w_mask
-        prob_of_i_from_i_no_mask = prob_of_i * i_no_mask
+        prob_of_i_from_i_no_mask = self.prob_of_i * i_no_mask
 
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
-        risk_in_mask = risk_no_mask / 2
+        risk_no_mask = np.clip(risk_no_mask,0, 0.95)
+
+        risk_in_mask = risk_no_mask / 4
+        risk_in_mask = np.clip(risk_in_mask,0, 0.95)
 
 
         # create 2 layer array of risk
@@ -332,14 +322,14 @@ class simulation:
     def get_node_status(self):
 
 
-        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4]
+        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4] + person.cords[5] # total people in shop
         state = person.cords
         total_people = np.sum(simgrid)
 
         percentages = {}
         for status, statusnum in self.STATUSES.items():
-            count = np.sum(simgrid[statusnum])
-            percentages[status] = 100 * count / total_people
+            count = np.sum(simgrid[statusnum]) # taking each state of person from the stacked array
+            percentages[status] = count
         return percentages
 
     def get_shop_numbers(self):
@@ -352,7 +342,7 @@ class simulation:
             simulation.inf_mas = inf_mas
             inf_no_mask = person.cords[3]
             simulation.inf_no_mask = inf_no_mask
-            caught_covid = person.cords[4]
+            caught_covid = person.cords[4] + person.cords[5]
             simulation.caught_covid = caught_covid
 
             simulation.susceptible = (sus_no_mask + sus_mask)  # counting susceptible people for animation
@@ -393,7 +383,8 @@ class person:
         in level 1: each element records the number of people at that node who are suseptible and not wearing a mask
         in level 2: each element records the number of people at that node who are infected & wearing a mask
         in level 3: each element records the number of people at that node infected and not wearing a mask
-        in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
+        in level 4: each element records the number of people at that node who have caught covid whilst shopping wearing mask(removed)
+        in level 5: each element records the number of people at that node who have caught covid whilst shopping without a mask(removed)
 
         The __init__() method defines all of the attributes of a shopper:
         - their position
@@ -422,7 +413,7 @@ class person:
     """
     
 
-    cords = np.zeros((5,8,7))
+    cords = np.zeros((6,8,7))
 
     # all possible paths that could be taken by a person through the shop
     paths = path_gen.possible_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
@@ -505,8 +496,11 @@ class person:
         probability_of_infection = simulation.shop_infection_risk[self.pos]
 
         if probability_of_infection > random():
-            #change their SIR level to 4 (removed)
-            self.SIR_level = 4
+            if self.mask == 0:
+                self.SIR_level = 5 # removed not wearing mask
+            else:
+                self.SIR_level = 4 #removved wearing mask
+
             #now have to change their status for the cords array
             self.change_status()
 
@@ -649,7 +643,7 @@ class Animation:
 
     def show(self):
         """Run the animation on screen"""
-        animation = FuncAnimation(self.figure, self.update, frames=range(100),
+        animation = FuncAnimation(self.figure, self.update, frames=range(self.duration),
                 init_func = self.init, blit=True, interval=200,repeat = False) # using funcanimation to run the animation
         plt.tight_layout()
         plt.show()
@@ -726,12 +720,13 @@ class LineAnimation:
             self.line_mpl[status] = line
         self.axes.legend(bbox_to_anchor=(1.04, 1), loc=2)
         self.axes.set_xlabel('Time steps (minutes)')
-        self.axes.set_ylabel('%', rotation=0)
-        self.axes.set_title('Proportion of people in the shop with each infection level')
+        self.axes.set_ylabel('No of shoppers')
+        self.axes.set_title('Number of people in the shop with each infection level')
 
     def init(self):
         self.axes.set_xlim([0, self.duration])
-        self.axes.set_ylim([0, 100])
+        self.axes.set_ylim([0, self.simulation.max_shoppers]) # setting the y lim so that no matter the proportion
+        #can visualise the number of shoppers
         return []
 
     def update(self,framenum):
@@ -748,7 +743,6 @@ class LineAnimation:
 if __name__ == "__main__":
 
     import sys
-    main(*sys.argv[1:])
-
+    main(sys.argv[1:])
 
 
