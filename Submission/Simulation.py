@@ -15,34 +15,17 @@ import Simulation as simulation
 class simulation:
     """Simulation of the spread of covid within a matrix, representing a supermarket.
 
-    The supermarket is represented as an 8 x 7 grid. Once a person enters the shop, there position on the grid
-    is denoted by a 1 at that location. There are two layers to this grid: shoppers wearing a mask, and shoppers without a mask.
+    The supermarket is represented as an 8 x 7 x 5 grid.
 
-    The state of one layer of the grid (shoppers wearing masks for example) might look like this:
+    There is one entrance at the bottom left and two exits at the top right of the grid.
+    The number in each position denotes the number of people in each location within the shop.
 
-    0 0 0 0 0 0 1 1
-    0 1 0 0 1 0 2 0
-    0 2 0 0 1 0 1 0
-    0 0 0 0 0 0 1 1
-    0 1 0 0 1 0 2 0
-    0 2 0 0 1 0 1 0
-    1 0 0 0 0 0 0 0
-
-    There is one entrance at the bottom left and two exits at the top right of the grid. The number in each
-    position denotes the number of people in each location within the shop.
-
-    The update() method advances the simulation by one timestep (minute), moving a person along their 'path' on the grid.
-
-    The update_infection_risk() method assigns a risk to each shop node based on whether there is a person present at
-    that node, and based on whether they are in the layer storing people with masks, or in the layer storing people
-    without masks. The risk of infection is set and halved for people wearing a mask.
-    The method then adds these layers to the person array which stores all five possible states:
-    susceptible (with and without a mask), infected (with and without a mask) and removed (caught covid).
-
-    The add_new_shopper() method introduces a new shopper into the store simulation.
-
-
-
+    The update() method advances the simulation by one timestep (minute).
+    The update_infection_risk() updates matrix for risk of infection at each node in the shop
+    The get_number_of_shoppers_entering() finds the number of people who can enter the shop at a time step
+    The add_new_shopper() method introduces a new shopper into the store simulation based on number of shoppers entering
+    get_node_status() extracts the number of people with each status at each timestep
+    get_shop_numbers() records the state of the simulation at each time_step
     Example
     =======
 
@@ -50,31 +33,22 @@ class simulation:
     - Up to two people can enter the shop at any one time
     - The simulation lasts for 100 minutes
     - Up to 12 shoppers can be in the shop at once
-    - The simulation is run in November
-    - No path system is in place
+    - The simulation is run with November as the infection rate
+    - A mixed path system is used
 
-    >>> sim = Simulation(3, 100, 12, 1120, 0) # not quite sure how to input the months??
-    >>> sim.add_new_shopper()  # adds a new shopper
+    >>> sim = Simulation(3, 100, 12, 1120, 2) #
+    >>> sim.add_new_shopper()
     >>> Results(sim, args.duration)
     {Number of people who've left the shop:32, Out of those, 93.75% entered infected,
     Out of those initially suseptible 0.0% caught covid, Average time in shop 23.375
     minutes.}
-
     """
-
-    # vector that will contain SIR status of each person who leaves the shop
-    left_shop = []
-    # vector what contains instance of each person currently in the shop
-    shoppers = []
-    # array storing each time step
-    time_step_counter = []
-    # array storing number of people in shop at each time step
-    people_at_time_step = []
-    # vector to count number of people who are in shop
-    shopping_count = []
-    # vector to record time steps
-    time = []
-
+    #vectors used for keeping track of states
+    left_shop = [] # statuses of people who have left
+    shoppers = [] # vector containg instance of each person currently in the shop
+    people_at_time_step = []     # array storing number of people in shop at each time step
+    shopping_count = [] #vector to count number of people who are in shop
+    shopping_time = [] # vector to contain length of shopping time per person
     # vectors to record total number of people at t with each SIR level
     sus_w_mask_t = []
     sus_wo_mask_t = []
@@ -123,8 +97,6 @@ class simulation:
     # level 1 is probability of infection for people without a mask
     shop_infection_risk = np.zeros((2, 8, 7))
 
-    # vector to contain length of shopping time per person
-    shopping_time = []
 
     def __init__(self, entry, duration, max_shoppers, path_system, prob_of_i, chance_person_wears_mask,
                  level_of_covid_in_area):
@@ -157,12 +129,6 @@ class simulation:
         self.add_new_shopper(number_of_new_shoppers)
 
         simulation.people_at_time_step.append(len(self.shoppers))
-
-        # simulation.sus_wo_mask_t.append(np.sum(self.person.cords[0]))
-        # simulation.sus_w_mask_t.append(np.sum(self.person.cords[1]))
-        # simulation.inf_w_mask_t.append(np.sum(self.person.cords[2]))
-        # simulation.inf_wo_mask_t.append(np.sum(self.person.cords[3]))
-        # simulation.caught_cov.append(np.sum(self.person.cords[4]))
         self.get_shop_numbers()
 
         simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
@@ -339,9 +305,7 @@ class person:
         - % of people who entered the shop suseptile who left with covid
         - average shopping time
     """
-
     cords = np.zeros((5, 8, 7))
-
     # all possible paths that could be taken by a person through the shop
     paths = path_gen.possible_paths(lay.aldi_layout(), (0, 0), [(6, 6), (7, 6)])
     slow_paths = path_gen.slow_paths(lay.aldi_layout(), (0, 0), [(6, 6), (7, 6)])
@@ -349,7 +313,6 @@ class person:
     one_way_paths = path_gen.possible_paths_oneway(lay.aldi_layout(), (0, 0), [(6, 6), (7, 6)])
 
     # Setting initial varibles for each person
-    # Add all variables for each person here
     def __init__(self, pos, covid_status, speed, mask):
         self.pos = pos  # Position in network
         self.n = 0  # current step in path (0 is the entrance of the shop)

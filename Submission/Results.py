@@ -1,19 +1,13 @@
-#import random as rd
 from statistics import mean
 
-
-# Import path generation from other file
-# Import aldi layout for other file
-
 def results(simulation, duration):
-    # TD:add docstring
-
+    """ Results function to extract the key results from the simulation:
+        - Number of people who have left the shop in the time simulated
+        - The percent of people that entered infected
+        - The percent of people who entered susceptible that caught COVID
+        - The average time of a person in the shop"""
     #run the simulation for as many time steps as the duration
     while simulation.time_step < duration:
-        #rgb_matrix = person.cords[0]
-        # uncomment this^^^ too see how people move through the shop in the cords array
-        # --------------------------------please put into own function??----------------------------------------------------#
-
 
         simulation.update()
 
