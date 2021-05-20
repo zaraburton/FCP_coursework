@@ -8,6 +8,8 @@ Inorder to run the script the following packages have to be installed:
 - matplotlib, 
 - networkx, 
 - itertools
+- tkinter
+- tkcalendar
 
 
 Main.py function should be used for running a simulation of COVID spreading in a supermarket.
