@@ -10,8 +10,11 @@ import tkinter as tk
 import tkcalendar as tkcal
 import random
 import Infection_rate_data as inf_rate
-import Initial_Simulation_test as init_sim
-
+#import Simulation as sim
+from Simulation import simulation as simulation
+from Results import results as results
+from Animation import Animation as Animation
+from Plot_results import plot_results as plot_results
 
 
 # Setup GUI window
@@ -94,9 +97,6 @@ def grab_date():
     # Slider set to output from infection_rate function
     infection_slider.set(infection_val)
 
-    # Return month variable as a tuple with an arbitrary number as the 1st character
-    # This allows the month variable to be used in other functions without defining it as a global variable
-    return (1,month)
 
 # Creating button to allow users to select a date
 date_button = tk.Button(root, text = "Select Date", command = grab_date)
@@ -143,23 +143,33 @@ max_people_slider.set(random.randint(1,30))
 
 # Defining function to take all GUI inputs and use them to run the simulation code
 def search_function():
+    level_of_infection_val = int(infection_slider.get())
     num_people_enter_val = int(num_people_enter_slider.get())
     time_val = int(time_slider.get())
     max_people_val = int(max_people_slider.get())
-    
-    # Way of using local variable from other function
-    month = grab_date()[1]
+    prob_of_i = 0.4
     
     # If oneway button selected then assign variable with a 2
     if var_oneway == True:
         path_type = 2
     else:
         path_type = 1
-        
-    #Runs GUI specific function from the simulation script which runs the simulation using GUI inputs
     
-    init_sim.GUI_run(num_people_enter_val, time_val, max_people_val, month, path_type)
-
+    # If mask button selected then assign variable with a 1
+    if var_mask == True:
+        mask_prob = 1
+    else:
+        mask_prob = 0
+   
+    # Runs same simulation operations as in the Main.py script
+    # Uses GUI inputs to run simulation and print results in console window
+   
+    sim = simulation(num_people_enter_val, time_val, max_people_val, path_type, prob_of_i, mask_prob, level_of_infection_val)
+    sim.add_new_shopper(1)
+    results(sim, time_val)
+    plot_results(sim, time_val)
+    animation = Animation(sim, time_val)
+    animation.show()
 
 # Create button to save all current GUI inputs and use them in simulation
 search_button = tk.Button(root, text = "Enter Inputs", command = search_function, height = 7, width = 14)
