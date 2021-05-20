@@ -16,33 +16,18 @@ class simulation:
     """Simulation of the spread of covid within a matrix, representing a supermarket.
 
     The supermarket is represented as an 8 x 7 x 5 grid.
-    The 8 x 7 2 array reprensents the shop space.
+    The 8 x 7 x 2 array reprensents the shop space.
 
     There is one entrance at the bottom left and two exits at the top right of the grid.
     The number in each position denotes the number of people in each location within the shop.
 
-    The update() method advances the simulation by one timestep (minute).
-    The update_infection_risk() updates matrix for risk of infection at each node in the shop
-    The get_number_of_shoppers_entering() finds the number of people who can enter the shop at a time step
-    The add_new_shopper() method introduces a new shopper into the store simulation based on number of shoppers entering
-    get_node_status() extracts the number of people with each status at each timestep
-    get_shop_numbers() records the state of the simulation at each time_step
-    Example
-    =======
-
-    Create a simulation with the following parameters:
-    - Up to two people can enter the shop at any one time
-    - The simulation lasts for 100 minutes
-    - Up to 12 shoppers can be in the shop at once
-    - The simulation is run with November as the infection rate
-    - A mixed path system is used
-
-    >>> sim = Simulation(3, 100, 12, 1120, 2) #
-    >>> sim.add_new_shopper()
-    >>> Results(sim, args.duration)
-    {Number of people who've left the shop:32, Out of those, 93.75% entered infected,
-    Out of those initially suseptible 0.0% caught covid, Average time in shop 23.375
-    minutes.}
+    - The 'update()' method advances the simulation by one timestep (minute).
+    - The 'update_infection_risk()' method updates matrix for risk of infection at each node in the shop.
+    - The 'get_number_of_shoppers_entering()' method finds the number of people who can enter the shop at a time step.
+    - The 'add_new_shopper()' method introduces a new shopper into the store simulation based on number of shoppers entering.
+    - The 'get_node_status()' method extracts the number of people with each status at each timestep.
+    - The 'get_shop_numbers()' method records the state of the simulation at each time_step.
+    
     """
     #vectors used for keeping track of states
     left_shop = [] # statuses of people who have left
@@ -307,16 +292,6 @@ class person:
         The new_SIR_level() function simulates people becoming infected and hence being moved to level 4 of the cords array
         i.e. their SIR_level becomes 4.
 
-
-        The results() function runs the simulation for as many time steps as the duration and obtains the following results:
-        - number of people who've left the shop
-        - number of peoplpe who left the shop that were intially infected
-        - % of people who left the shop that were intially infected
-        - number of people who did not catch covid
-        - number of people who left that caught covid while shopping
-        - number of people who've left that were initially suseptible
-        - % of people who entered the shop suseptile who left with covid
-        - average shopping time
     """
     cords = np.zeros((6, 8, 7))
     # all possible paths that could be taken by a person through the shop
