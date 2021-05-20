@@ -17,7 +17,7 @@ import Networkx_aldi_layout as lay
 import Infection_rate_data as inf_rate
 
 
-def main(*args):
+def main(args):
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     parser = argparse.ArgumentParser(description='Animate an epidemic')
@@ -40,15 +40,13 @@ def main(*args):
     args = parser.parse_args(args)
 
     #TD: make parser args for next variables
-    prob_of_i = 0.2
-    chance_person_wears_mask = 0.4
 
     #TD: something to say you cant have level of covid and month given at same time? or just pick on or the other? (Will automatically go by the month if thats given)
     # set level_of_covid_in_area (prob of infected person entering the shop) as infection rate for that month
-    if args.month:
-        level_of_covid_in_area = inf_rate.infection_rate(args.month)
-    else:
-        level_of_covid_in_area = args.level_of_covid
+    #if args.month:
+    #    level_of_covid_in_area = inf_rate.infection_rate(args.month)
+    #else:
+    #    level_of_covid_in_area = args.level_of_covid
 
     #if user wants to be prompted
     if args.prompt:
@@ -61,11 +59,12 @@ def main(*args):
         results(sim, duration)
     else:
         #running the simulation based off of argument inputs instead
+        prob_of_i = 0.2
+        chance_person_wears_mask = 0.4
+        level_of_covid_in_area = args.level_of_covid
         sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
         sim.add_new_shopper(1)
         results(sim, args.duration)
-
-
 
     #plotting the graphs or animation based off of user input showing simulation results
     if args.plot:
@@ -332,14 +331,14 @@ class simulation:
     def get_node_status(self):
 
 
-        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4]
+        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4] # total people in shop
         state = person.cords
         total_people = np.sum(simgrid)
 
         percentages = {}
         for status, statusnum in self.STATUSES.items():
-            count = np.sum(simgrid[statusnum])
-            percentages[status] = 100 * count / total_people
+            count = np.sum(simgrid[statusnum]) # taking each state of person from the stacked array
+            percentages[status] = count
         return percentages
 
     def get_shop_numbers(self):
@@ -649,7 +648,7 @@ class Animation:
 
     def show(self):
         """Run the animation on screen"""
-        animation = FuncAnimation(self.figure, self.update, frames=range(100),
+        animation = FuncAnimation(self.figure, self.update, frames=range(self.duration),
                 init_func = self.init, blit=True, interval=200,repeat = False) # using funcanimation to run the animation
         plt.tight_layout()
         plt.show()
@@ -726,12 +725,13 @@ class LineAnimation:
             self.line_mpl[status] = line
         self.axes.legend(bbox_to_anchor=(1.04, 1), loc=2)
         self.axes.set_xlabel('Time steps (minutes)')
-        self.axes.set_ylabel('%', rotation=0)
-        self.axes.set_title('Proportion of people in the shop with each infection level')
+        self.axes.set_ylabel('No of shoppers')
+        self.axes.set_title('Number of people in the shop with each infection level')
 
     def init(self):
         self.axes.set_xlim([0, self.duration])
-        self.axes.set_ylim([0, 100])
+        self.axes.set_ylim([0, self.simulation.max_shoppers]) # setting the y lim so that no matter the proportion
+        #can visualise the number of shoppers
         return []
 
     def update(self,framenum):
@@ -748,7 +748,7 @@ class LineAnimation:
 if __name__ == "__main__":
 
     import sys
-    main(*sys.argv[1:])
+    main(sys.argv[1:])
 
 
 
