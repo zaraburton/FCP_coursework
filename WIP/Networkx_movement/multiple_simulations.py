@@ -24,12 +24,12 @@ def get_increment_points(chosen_sim_arg):
     """takes chosen simulation input argument and generates a list of increments points specific to the chosen variable's limits"""
 
     #each possible chosen input's [minimum value, maximul value, and increment size]
-    variable_limits = [ [1,20,1], #max people entering in one time step
-                       [50,500,5], #duration
-                       [10,200, 5], #max_shoppers
-                       [0.05,1,0.05], #prob_of_i
+    variable_limits = [ [1,100,1], #max people entering in one time step
+                       [50,500,1], #duration
+                       [10, 500, 5], #max_shoppers
+                       [0.05,1,0.005], #prob_of_i
                        [0.02, 0.98, 0.02], #chance_person_wears_mask
-                       [0.05,1,0.05], #level_of_covid_in_area 
+                       [0.02,1,0.02], #level_of_covid_in_area 
     ]
     
     min_var = variable_limits[chosen_sim_arg][0]
@@ -61,11 +61,11 @@ def run_multiple_simulations(chosen_sim_arg, variable_values):
     
     #array to be filled with results from each simulation
     
-    sim_inputs_dict = {0 :5,   #max people entering in one time step
+    sim_inputs_dict = {0 : 5,   #max people entering in one time step
                     1: 150, #duration
-                    2: 40, #max_shoppers
-                    3 : 0.25, #prob_of_i
-                    4 : 0.6, #chance_person_wears_mask
+                    2: 50, #max_shoppers
+                    3 : 0.1, #prob_of_i
+                    4 : 0.2, #chance_person_wears_mask
                     5 : 0.25} #level_of_covid_in_area
 
  
@@ -86,7 +86,7 @@ def run_multiple_simulations(chosen_sim_arg, variable_values):
         path_system = 1 # different plot needed for this changing
 
         #initiates simulation w/ variables set
-        simulation = sim.simulation(max_entry, duration, max_shoppers, prob_of_i, chance_person_wears_mask, level_of_covid_in_area, path_system)
+        simulation = sim.simulation(max_entry, duration, max_shoppers, path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
         #add first shopper(s) to shop simulation
         simulation.add_new_shopper(1)
         #update simulation for each timestep
@@ -100,7 +100,7 @@ def run_multiple_simulations(chosen_sim_arg, variable_values):
     return results_values
 
 
-def get_x_axis_label(chosen_sim_arg):
+def get_plot_labels(chosen_sim_arg):
     """returns label for scatter plot x-axis from input argument"""
     #dictionary of possible variable names
     input_arg_names = {0 : 'Maximum number of people who can enter the shop in one timestep',   #max people entering in one time step
@@ -109,18 +109,25 @@ def get_x_axis_label(chosen_sim_arg):
                     3 : 'Probability a suseptible person catching covid', #prob_of_i
                     4 : 'Probability shoppers are wearing a mask', #chance_person_wears_mask
                     5 : 'Probability a new shopper is infected'} #level_of_covid_in_area
+   
+    title_dict = {0 : 'How Covid Transmission Rate Changes With Increasing Max entry ',   #max people entering in one time step
+                    1 : 'How Model Prediction Converges With Incresed Time Steps', #duration
+                    2 : 'How Covid Transmission Rate Changes With Shop Capacity', #max_shoppers
+                    3 : 'How Covid Transmission Changes with Probability of Infection', #prob_of_i
+                    4 : 'How Covid Transmission Changes with Increased Mask Wearing', #chance_person_wears_mask
+                    5 : 'How Covid Transmission Changes with Increasing Initially Infected SHoppers'} #level_of_covid_in_area
+
 
     #selecting correct name from dictionary using input arg
     x_axis_label = input_arg_names[chosen_sim_arg]
-    print(x_axis_label)
+    title_label = title_dict[chosen_sim_arg]
 
-    return x_axis_label
+    return x_axis_label, title_label 
 
         
 def plot_results(chosen_sim_arg):
     """scatter plot the results of each simulation run at each increment value of the chosen simulation argument"""
     #run multiple simulations
-
     variable_values = get_increment_points(chosen_sim_arg)
     results_values = run_multiple_simulations(chosen_sim_arg, variable_values)
     # once all simulations have run 
@@ -129,10 +136,12 @@ def plot_results(chosen_sim_arg):
     ax=fig.add_subplot(1, 1, 1)
     ax.scatter(variable_values, results_values, color='r')
 
-    x_axis_label = get_x_axis_label(chosen_sim_arg)
+    x_axis_label = get_plot_labels(chosen_sim_arg)[0]
     ax.set_xlabel(x_axis_label)
     ax.set_ylabel('Risk of catching COVID')
-    #ax.set_title('''scatter plot')
+
+    title = get_plot_labels(chosen_sim_arg)[1]
+    ax.set_title(title )
 
     plt.show()
 
