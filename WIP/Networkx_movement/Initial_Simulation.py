@@ -18,7 +18,6 @@ import Infection_rate_data as inf_rate
 
 
 def main(*args):
-#changing the argument input to allow the command line to ask the user to input
     #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     parser = argparse.ArgumentParser(description='Animate an epidemic')
@@ -31,11 +30,13 @@ def main(*args):
     parser.add_argument('--month', metavar='myy', type=int, default=1120,
                     help='The month to use to represent the infection rate where 320 is March 2020 (from 320 - 421)')
     parser.add_argument('--path_system', metavar='N', type=int, default=0,
-                    help='The type of path system that is used in the shop where 1 is any path and 2 is a one way system')
+                    help='The type of path system 0 = slow walker 1 = quick walker 2 = one way path system, 3 = mixed scenario')
     parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
                     help='Probability of any individual in the area being infected')
     parser.add_argument('--plot', action='store_true',
                     help='Generate plots instead of animation')
+    parser.add_argument('--prompt', action='store_true',
+                    help='Prompts for input arguments and retrieve animation')
     args = parser.parse_args(args)
 
     #TD: make parser args for next variables
@@ -49,15 +50,24 @@ def main(*args):
     else:
         level_of_covid_in_area = args.level_of_covid
 
+    #if user wants to be prompted
+    if args.prompt:
+        max_entry, duration, max_shoppers, path_system, month = get_user_input()
+        level_of_covid_in_area = inf_rate.infection_rate(month)
+        prob_of_i = 0.2
+        chance_person_wears_mask = 0.4
+        sim = simulation(max_entry, duration, max_shoppers, path_system, prob_of_i,chance_person_wears_mask,level_of_covid_in_area)
+        sim.add_new_shopper(1)
+        results(sim, duration)
+    else:
+        #running the simulation based off of argument inputs instead
+        sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
+        sim.add_new_shopper(1)
+        results(sim, args.duration)
 
-    #setting up simulation
-    sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, prob_of_i,chance_person_wears_mask, level_of_covid_in_area)
-    #starts out with 1 shopper 
-    sim.add_new_shopper(1)
-    results(sim, args.duration)
 
-    #plotting the graphs showing simulation results
-    # Plot or animation?
+
+    #plotting the graphs or animation based off of user input showing simulation results
     if args.plot:
         plot_results(sim, args.duration)
         plt.show()
@@ -172,6 +182,14 @@ class simulation:
        'magenta': (255, 0, 255),
         'cyan': (0, 255, 255),
      }
+    # colour map for sus vs inf plots
+    INF_COLOURMAP_RGB = {
+        'yellow': (255, 255, 0),
+        'red': (255, 0, 0),
+        'cyan': (0, 255, 255),
+    }
+
+
     # probability of infection at each node in the shop
     # level 0 is probability of infection for people wearing a mask
     # level 1 is probability of infection for people without a mask
@@ -213,12 +231,12 @@ class simulation:
         simulation.people_at_time_step.append(len(self.shoppers))
 
 
-        simulation.sus_wo_mask_t.append(np.sum(person.cords[0]))
-        simulation.sus_w_mask_t.append(np.sum(person.cords[1]))
-        simulation.inf_w_mask_t.append(np.sum(person.cords[2]))
-        simulation.inf_wo_mask_t.append(np.sum(person.cords[3]))
-        simulation.caught_cov.append(np.sum(person.cords[4]))
-        #self.get_shop_numbers()
+        #simulation.sus_wo_mask_t.append(np.sum(self.person.cords[0]))
+        #simulation.sus_w_mask_t.append(np.sum(self.person.cords[1]))
+        #simulation.inf_w_mask_t.append(np.sum(self.person.cords[2]))
+        #simulation.inf_wo_mask_t.append(np.sum(self.person.cords[3]))
+        #simulation.caught_cov.append(np.sum(self.person.cords[4]))
+        self.get_shop_numbers()
 
         simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
         #add one to the time step counter
@@ -513,9 +531,7 @@ def results(simulation, duration):
         #rgb_matrix = person.cords[0]
         # uncomment this^^^ too see how people move through the shop in the cords array
         # --------------------------------please put into own function??----------------------------------------------------#
-        # capturing the state of the shop nodes for animation
-        ## TD I NEED TO MAKE all of THIS A FUNCTION, but please leave here for now :)
-        # capturing the state of the shop nodes for use in animation
+
 
         simulation.update()
 
@@ -554,78 +570,87 @@ def results(simulation, duration):
 
 #creating a new function to plot still graphs of the results
 def plot_results(simulation,duration):
-    # pulling arrays from the simulation inorder to plot
+    # setting up the arrays for plotting
     x = np.arange(duration)
-    x2 = simulation.shopping_time
     shoppers_at_step = simulation.people_at_time_step
-    print(shoppers_at_step)
     sus_w_mask = simulation.sus_w_mask_t
     sus_wo_mask = simulation.sus_wo_mask_t
     inf_w_mask_t = simulation.inf_w_mask_t
     inf_wo_mask_t = simulation.inf_wo_mask_t
     caught_covid_t = simulation.caught_cov
-    status = simulation.left_shop
+
+    leaving_status = []
+    leave_sus = simulation.left_shop.count(0) + simulation.left_shop.count(1)
+    leave_caught_covid = simulation.left_shop.count(4)
+    leave_initially_infected = simulation.left_shop.count(2) + simulation.left_shop.count(3)
+    leaving_status.extend([leave_sus,leave_initially_infected,leave_caught_covid])
+
+
     #setting up the plots
     fig, axs = plt.subplots(2, 2, figsize=(12,8)) # making a large figure to show the plots
-    #axs[0, 0].plot(x, sus_w_mask,'-b') # plotting the total number of shoppers at every time step
-    #axs[0, 0].set_title('Number of People in the Shop at each time step') # labelling the plot
-    #axs[0,0].legend(['Number of Shoppers'])
-    axs[0, 0].plot(x, shoppers_at_step, '-b') # plotting susceptible with full blue line
+    #Plotting shoppers within the shop at each time step in simulation
+    axs[0, 0].plot(x, shoppers_at_step, '-k') # plotting shoppers with full black line
     axs[0, 0].set_title('Number of People in the shop at each time step') # labelling the plot
     axs[0,0].legend(['Number of Shoppers'])
+    #plotting a stacked plot of the shoppers in the shop at each time step in proportion of their status
     axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t,
                         labels=['Susceptable w mask', 'Susceptable wo mask', 'Infected w mask', 'Infected wo mask',
-                                'Caught COV in shop'])
+                                'Caught COV in shop'], colors = simulation.COLOURMAP_RGB)
     axs[0,1].legend()
-    axs[0, 1].set_title('Proportion of each SIR level when leaving')
-    axs[0, 1].set_title('Cumulative shoppers with respective status') # setting title
-    axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers with each SIR')
-    axs[1, 0].plot(x, caught_covid_t, ':r')
-    axs[1, 0].set_title('Number of people who have caught covid in the shop')
-    axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Cumulative number of shoppers')
-    axs[1,0].legend(['People who caught COVID'])
-    axs[1, 1].scatter(x2, status)
+    axs[0, 1].set_title('Total shoppers in the shop with respective status at each time step') # setting title
+    axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Shoppers')
+
+    #plotting the number of people who have caught COVID
+    axs[1, 0].plot(x, caught_covid_t, ':c')
+    axs[1, 0].plot(x, inf_w_mask_t, ':r')
+    axs[1, 0].plot(x, inf_wo_mask_t, ':m')
+    axs[1, 0].set_title('Number of people who are infected in the shop at t')
+    axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Shoppers')
+    axs[1,0].legend(['People who caught COVID', 'Infected with a mask', 'Infected without a mask'])
+
+    #pie chart representing how many people left the shop with each end status
+    axs[1, 1].pie(leaving_status, colors = simulation.INF_COLOURMAP_RGB)
     axs[1, 1].set_title('Proportion of each SIR level when leaving')
-    axs[1,1].set(xlabel='Time in the shop(minutes)', ylabel='Cumulative shoppers')
-    axs[1,1].set_yticks((0, 1, 2, 3, 4))
-    axs[1,1].set_yticklabels(("Sus wo mask", "Sus w mask", "Infected w mask", "Infected wo a mask", "Caught covid within the shop"))
+    axs[1, 1].legend(['Left the shop susceptible', 'Left the shop infected','Left the shop having caught COVID'], loc = 'upper right')
+    # tight layout ensures all the legeds and titles fit within fig
     fig.tight_layout()
 
 
-# TD SHALL I GET RID OF THIS?
-#function for getting user input
-#def get_user_input():
- #   entry = input("Maximum number of people who can enter the shop at once: ")
-  #  duration = input("Number of time steps to run the simulation for: ")
-   # max_shoppers = input("Maximum number of people allowed in the shop at once: ")
-    #prob_infection = input("Probability of catching covid when within 2m of someone infected: ")
-    #params = [entry, duration, max_shoppers]
-    #if all(str(i).isdigit() for i in params):  # Check input is valid
-   #     params = [int(x) for x in params]
-   # else:
-    #    print(
-     #       "Could not parse input. The simulation will use default values:",
-      #      "\n10 people max entry at one time, 70 people max in the shop at one time, and the simulation will run for 200 time steps.",
-       #     #"\n10 people max entry at one time, 50 people max in the shop at one time, and the simulation will run for 120 time steps.",
-        #)
- #       params = [10, 120, 50]
-  #  return params
+#function for getting user input if prompted
+def get_user_input():
+    entry = input("Maximum number of people who can enter the shop at once: ")
+    duration = input("Number of time steps to run the simulation for: ")
+    max_shoppers = input("Maximum number of people allowed in the shop at once: ")
+    month = input("The month of data to retrieve COVID infection rate for: ")
+    path_system = input("The type of path system 0 = slow walker 1 = quick walker 2 = one way path system, 3 = mixed speed scenario: ")
+    params = [entry, duration, max_shoppers,month,path_system]
+    if all(str(i).isdigit() for i in params):  # Check input is valid
+        params = [int(x) for x in params]
+    else:
+        print(
+            "Could not parse input. The simulation will use default values:",
+            "\n5 people max entry at one time, 30 people max in the shop at one time, and the simulation will run for 200 time steps "
+            "using the month of 1120 for data, slow walkers and each individual having a 25% chance of entering the shop with infected.",
+        )
+        params = [5, 200, 30,1120,0]
+    return params
 
 class Animation:
+    """Class to run the line and grid animation"""
     def __init__(self, simulation, duration):
         self.simulation = simulation
         self.duration = duration
 
-        self.figure = plt.figure(figsize=(16, 4))
+        self.figure = plt.figure(figsize=(16, 4)) # setting up figure with 2 plots
         self.axes_grid = self.figure.add_subplot(1, 2, 1)
         self.axes_line = self.figure.add_subplot(1, 2, 2)
-        self.gridanimation = GridAnimation(self.axes_grid, self.simulation)
-        self.lineanimation = LineAnimation(self.axes_line, self.simulation, duration)
+        self.gridanimation = GridAnimation(self.axes_grid, self.simulation) # calling grid animation class
+        self.lineanimation = LineAnimation(self.axes_line, self.simulation, duration) # calling line animation class
 
     def show(self):
         """Run the animation on screen"""
         animation = FuncAnimation(self.figure, self.update, frames=range(100),
-                init_func = self.init, blit=True, interval=200,repeat = False)
+                init_func = self.init, blit=True, interval=200,repeat = False) # using funcanimation to run the animation
         plt.tight_layout()
         plt.show()
 
@@ -637,7 +662,7 @@ class Animation:
         return actors
 
     def update(self, framenumber):
-        """Update the animation (called by FuncAnimation)"""
+        """Update the animation (called by FuncAnimation) and the respective grid / line animation classes"""
         self.simulation.update()
         actors = []
         actors += self.gridanimation.update(framenumber)
@@ -646,32 +671,28 @@ class Animation:
 
 
 class GridAnimation:
-    """Animate a grid showing the infected people moving round the shop"""
+    """Animate a grid showing the infected people moving round the shop
+    and the number of infected people in each node"""
 
     def __init__(self, axes, simulation):
         self.axes = axes
         self.simulation = simulation
-        infected = self.simulation.infected
-        self.shop = np.empty((infected.shape))
-        self.shop[infected ==1 ] = 1
-        self.shop[infected == 2] = 2
-        self.shop[infected == 3] = 3
-        self.shop[infected == 3] = 4
-        self.image = self.axes.imshow(self.shop, cmap = 'Pastel1')
-        self.axes.set_xticks([])
-        self.axes.set_yticks([])
+        infected = self.simulation.infected # retrieving infected grid from simulation
+        self.shop = np.empty((infected.shape)) # setting up shop as an empty array the same shape as the simulation shop
+        infected_range = np.arange(self.simulation.max_shoppers) # retrieving the max_no_shoppers possibly in shop
+        self.values = np.unique(infected.ravel()) # retrieving the number of people in each node
+        # and storing as a unique integer
+        for i in infected_range:
+            self.shop[infected == i] = i # making the shop an array
+        # where the number corresponds to the number of infected people
+        self.image = self.axes.imshow(self.shop, cmap = 'Reds') # choosing a red colour map to align with graphing
         self.axes.set_title('Infected people moving round the shop')
-        # i.e. a sorted list of all values in data
-        values = np.unique(self.shop.ravel())
-        labels = [ '0','1', '2', '3','4','5','6']
-        # get the colors of the values, according to the
-        # colormap used by imshow
-        colors = [self.image.cmap(self.image.norm(value)) for value in values]
+        # get the colors of the values, according to the colormap used by imshow
+        colors = [self.image.cmap(self.image.norm(value)) for value in self.values]
         # create a patch (proxy artist) for every color
-        patches = [mpatches.Patch(color=colors[i], label="No infected people in the node: {l}".format(l=labels[i])) for i in range(len(values))]
-        # put those patched as legend-handles into the legend
-        self.axes.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2)
-
+        for i in range(len(self.values)):
+            self.patches = [mpatches.Patch(color=colors[i], label="No infected people in the node: {l}".format(l=self.values[i])) for i in range(len(self.values))]
+        self.axes.legend(handles=self.patches, bbox_to_anchor=(1.04, 1), loc=2)
 
     def init(self):
         return self.update(0)
@@ -680,10 +701,11 @@ class GridAnimation:
             minute = framenum
             infected = self.simulation.infected
             self.shop = np.empty((infected.shape))
-            self.shop[infected == 1] = 1
-            self.shop[infected == 2] = 2
-            self.shop[infected == 3] = 3
-            self.shop[infected == 3] = 4
+            infected_range = np.arange(self.simulation.max_shoppers)
+            self.shop = np.empty((infected.shape))
+            self.values = np.unique(infected.ravel())
+            for i in infected_range:
+                self.shop[infected == i] = i
             self.image.set_array(self.shop)
             return [self.image]
 
@@ -696,12 +718,13 @@ class LineAnimation:
         self.simulation = simulation
         self.duration = duration
         self.xdata = []
-        self.ydata = {status: [] for status in simulation.STATUSES}
+        self.ydata = {status: [] for status in simulation.STATUSES} #setting up poss statuses
         self.line_mpl = {}
         for status, colour in simulation.COLOURMAP.items():
-            [line] = self.axes.plot([], [],color=colour, label=status, linewidth=1) # this would be better as a stack plot however cant be animated
+            [line] = self.axes.plot([], [],color=colour, label=status, linewidth=1) # this would
+            # be better as a stack plot however cant be animated
             self.line_mpl[status] = line
-        self.axes.legend(prop={'size':'x-small'}, loc=(1.04,0))
+        self.axes.legend(bbox_to_anchor=(1.04, 1), loc=2)
         self.axes.set_xlabel('Time steps (minutes)')
         self.axes.set_ylabel('%', rotation=0)
         self.axes.set_title('Proportion of people in the shop with each infection level')
@@ -712,11 +735,12 @@ class LineAnimation:
         return []
 
     def update(self,framenum):
-        percents = self.simulation.get_node_status()
+        percents = self.simulation.get_node_status() # getting the statuses of each node
         self.xdata.append(len(self.xdata))
         for status, percent in percents.items():
             self.ydata[status].append(percent)
-            self.line_mpl[status].set_data(self.xdata, self.ydata[status])
+            self.line_mpl[status].set_data(self.xdata, self.ydata[status]) # getting the percentages of
+            # people at each infection level
         return list(self.line_mpl.values())
 
 
