@@ -16,6 +16,7 @@ class simulation:
     """Simulation of the spread of covid within a matrix, representing a supermarket.
 
     The supermarket is represented as an 8 x 7 x 5 grid.
+    The 8 x 7 2 array reprensents the shop space.
 
     There is one entrance at the bottom left and two exits at the top right of the grid.
     The number in each position denotes the number of people in each location within the shop.
@@ -54,29 +55,33 @@ class simulation:
     sus_wo_mask_t = []
     inf_w_mask_t = []
     inf_wo_mask_t = []
-    caught_cov = []
+    caught_cov_m = []
+    caught_cov_nm = []
 
     # Status codes to store in the numpy array representing the state.
     SUSCEPTABLE_W_MASK = 0
     SUSCEPTABLE_WO_MASK = 1
     INFECTED_W_MASK = 2
     INFECTED_WO_MASK = 3
-    CAUGHT_COV_IN_SHOP = 4
+    CAUGHT_COV_IN_SHOP_M = 4
+    CAUGHT_COV_IN_SHOP_NM = 5
 
     STATUSES = {
-        'Susceptable with a mask': SUSCEPTABLE_W_MASK,
-        'Susceptable without a mask': SUSCEPTABLE_WO_MASK,
+        'Susceptible with a mask': SUSCEPTABLE_W_MASK,
+        'Susceptible without a mask': SUSCEPTABLE_WO_MASK,
         'Infected with a mask': INFECTED_W_MASK,
         'Infected without a mask': INFECTED_WO_MASK,
-        'Caught COVID in shop': CAUGHT_COV_IN_SHOP,
+        'Caught COVID in shop with mask': CAUGHT_COV_IN_SHOP_M,
+        'Caught COVID in shop without a mask': CAUGHT_COV_IN_SHOP_NM,
     }
 
     COLOURMAP = {
-        'Susceptable with a mask': 'yellow',
-        'Susceptable without a mask': 'green',
+        'Susceptible with a mask': 'yellow',
+        'Susceptible without a mask': 'green',
         'Infected with a mask': 'red',
         'Infected without a mask': 'magenta',
-        'Caught COVID in shop': 'cyan',
+        'Caught COVID in shop with a mask': 'cyan',
+        'Caught COVID in shop without a mask': 'blue',
     }
     COLOURMAP_RGB = {
         'yellow': (255, 255, 0),
@@ -84,6 +89,7 @@ class simulation:
         'red': (255, 0, 0),
         'magenta': (255, 0, 255),
         'cyan': (0, 255, 255),
+        'blue': (0, 0, 255),
     }
     # colour map for sus vs inf plots
     INF_COLOURMAP_RGB = {
@@ -131,7 +137,7 @@ class simulation:
         simulation.people_at_time_step.append(len(self.shoppers))
         self.get_shop_numbers()
 
-        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
+        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4] + person.cords[5])
         # add one to the time step counter
 
         self.time_step += 1
@@ -139,19 +145,23 @@ class simulation:
     def update_infection_risk(self):
 
         """updates matrix for risk of infection at each node in the shop"""
-        # number of infected people ate ach shop node w/ mask
-        i_w_mask = person.cords[2]  # and again for 3 but without compensating for masks
-        # number of infected people ate ach shop node w/o mask
+        #number of infected people at each shop node w/ mask
+        i_w_mask = person.cords[2]
+        #number of infected people ate ach shop node w/o mask
         i_no_mask = person.cords[3]
 
-        prob_of_i = 0.2  # chance of a person w/o mask catching covid from infected person w/o mask
-        reduced_i_prob_w_mask = prob_of_i / 2  # chance of a person w/o mask catching covid from infected person w/ mask
+     #   prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
+        reduced_i_prob_w_mask = self.prob_of_i / 4 #chance of a person w/o mask catching covid from infected person w/ mask
 
         prob_of_i_from_i_w_mask = reduced_i_prob_w_mask * i_w_mask
-        prob_of_i_from_i_no_mask = prob_of_i * i_no_mask
+        prob_of_i_from_i_no_mask = self.prob_of_i * i_no_mask
 
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
-        risk_in_mask = risk_no_mask / 2
+        risk_no_mask = np.clip(risk_no_mask,0, 0.95)
+
+        risk_in_mask = risk_no_mask / 4
+        risk_in_mask = np.clip(risk_in_mask,0, 0.95)
+
 
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
@@ -188,7 +198,7 @@ class simulation:
             speed = 1  # assign speed being quick
         elif self.path_system == 0:  # when all shoppers move slowly
             speed = 0
-        elif self.path_system == 3:  # when user has not specified a speed of shopper
+        elif self.path_system == 3:
             speed = randint(0, 1)  # assign shoppers slow and quick paths randomly
 
         for shopper in shoppers_to_add:
@@ -216,11 +226,10 @@ class simulation:
 
     def get_node_status(self):
 
-        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[
-            4]  # total people in shop
+        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4] + person.cords[5]  # total people in shop
         state = person.cords
         total_people = np.sum(simgrid)
-
+        #called percentages but actually is a count of the people
         percentages = {}
         for status, statusnum in self.STATUSES.items():
             count = np.sum(simgrid[statusnum])  # taking each state of person from the stacked array
@@ -237,11 +246,13 @@ class simulation:
             simulation.inf_mas = inf_mas
             inf_no_mask = person.cords[3]
             simulation.inf_no_mask = inf_no_mask
-            caught_covid = person.cords[4]
-            simulation.caught_covid = caught_covid
+            caught_covid_mask = person.cords[4]
+            simulation.caught_covid_mask = caught_covid_mask
+            caught_covid_n_mask = person.cords[5]
+            simulation.caught_covid_mask = caught_covid_n_mask
 
             simulation.susceptible = (sus_no_mask + sus_mask)  # counting susceptible people for animation
-            simulation.infected = (inf_mas + inf_no_mask + caught_covid)  # counting infected people for animation
+            simulation.infected = (inf_mas + inf_no_mask + caught_covid_mask +caught_covid_n_mask)  # counting infected people for animation
             no_sus_at_t = np.sum(sus_mask) + np.sum(sus_no_mask)
             no_inf_at_t = np.sum(inf_mas) + np.sum(inf_no_mask)
             shoppers_total = np.sum(person.cords)
@@ -261,8 +272,11 @@ class simulation:
             inf_w_maskt = np.sum(inf_mas)
             simulation.inf_w_mask_t.append(inf_w_maskt)
 
-            caught = np.sum(caught_covid)
-            simulation.caught_cov.append(caught)
+            caught_m = np.sum(caught_covid_mask)
+            simulation.caught_cov_m.append(caught_m)
+
+            caught_nm = np.sum(caught_covid_n_mask)
+            simulation.caught_cov_nm.append(caught_nm)
 
 
 # ----------------------------------------------------------------------------#
@@ -280,22 +294,21 @@ class person:
         in level 3: each element records the number of people at that node infected and not wearing a mask
         in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
 
-        The __init__() method defines all of the attributes of a shopper:
+        The __init__() function defines all of the attributes of a shopper:
         - their position
         - current step on their path journey
         - their covid status
         - their speed of movement (based on the length of their path) and whether there is a one-way system in place
         - whether or not they are wearing a mask
 
-        The move_path() method moves the person along their allocated path. If they are at the end of their path,
+        The move_path() function moves the person along their allocated path. If they are at the end of their path,
         they (along with their attributes) are removed from the simulation.
 
-        The new_SIR_level() method simulates people becoming infected and hence being moved to level 4 of the cords array
+        The new_SIR_level() function simulates people becoming infected and hence being moved to level 4 of the cords array
         i.e. their SIR_level becomes 4.
 
-        The change_status() method ... # not too sure
 
-        The results() method runs the simulation for as many time steps as the duration and obtains the following results:
+        The results() function runs the simulation for as many time steps as the duration and obtains the following results:
         - number of people who've left the shop
         - number of peoplpe who left the shop that were intially infected
         - % of people who left the shop that were intially infected
@@ -305,7 +318,7 @@ class person:
         - % of people who entered the shop suseptile who left with covid
         - average shopping time
     """
-    cords = np.zeros((5, 8, 7))
+    cords = np.zeros((6, 8, 7))
     # all possible paths that could be taken by a person through the shop
     paths = path_gen.possible_paths(lay.aldi_layout(), (0, 0), [(6, 6), (7, 6)])
     slow_paths = path_gen.slow_paths(lay.aldi_layout(), (0, 0), [(6, 6), (7, 6)])
@@ -381,9 +394,12 @@ class person:
         probability_of_infection = simulation.shop_infection_risk[self.pos]
 
         if probability_of_infection > random():
-            # change their SIR level to 4 (removed)
-            self.SIR_level = 4
-            # now have to change their status for the cords array
+            if self.mask == 0:
+                self.SIR_level = 5 # removed not wearing mask
+            else:
+                self.SIR_level = 4 #removved wearing mask
+
+            #now have to change their status for the cords array
             self.change_status()
 
     def change_status(self):

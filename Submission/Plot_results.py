@@ -15,10 +15,11 @@ def plot_results(simulation,duration):
     sus_wo_mask = simulation.sus_wo_mask_t # number of people susceptible wo mask
     inf_w_mask_t = simulation.inf_w_mask_t # number of people infected with a mask
     inf_wo_mask_t = simulation.inf_wo_mask_t # number of people infected wo a mask
-    caught_covid_t = simulation.caught_cov # number of people who have caught COV in shop
+    caught_covid_t_m = simulation.caught_cov_m # number of people who have caught COV w mask in shop
+    caught_covid_t_nm = simulation.caught_cov_nm # number of people who have caught COV w mask in shop
     leaving_status = []
     leave_sus = simulation.left_shop.count(0) + simulation.left_shop.count(1) # leaving susceptible sum
-    leave_caught_covid = simulation.left_shop.count(4) # leaving having caught sum
+    leave_caught_covid = simulation.left_shop.count(4) + simulation.left_shop.count(5) # leaving having caught sum
     leave_initially_infected = simulation.left_shop.count(2) + simulation.left_shop.count(3) # leaving infected sum
     leaving_status.extend([leave_sus,leave_initially_infected,leave_caught_covid]) # array for pie chart
 
@@ -32,7 +33,7 @@ def plot_results(simulation,duration):
     axs[0,0].legend(['Number of Shoppers'])
 
     #plotting a stacked plot of the shoppers in the shop at each time step in proportion of their status
-    axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t,
+    axs[0, 1].stackplot(x, sus_wo_mask, sus_w_mask, inf_w_mask_t, inf_wo_mask_t, caught_covid_t_m, caught_covid_t_nm,
                         labels=['Susceptable w mask', 'Susceptable wo mask', 'Infected w mask', 'Infected wo mask',
                                 'Caught COV in shop'], colors = simulation.COLOURMAP_RGB)
     axs[0,1].legend()
@@ -40,8 +41,9 @@ def plot_results(simulation,duration):
     axs[0,1].set(xlabel='Time steps (minutes)', ylabel='Shoppers')
 
     #plotting the number of people who have caught COVID
-    axs[1, 0].plot(x, caught_covid_t, ':c')
-    axs[1, 0].plot(x, inf_w_mask_t, ':r')
+    axs[1, 0].plot(x, caught_covid_t_m, ':c')
+    axs[1, 0].plot(x, caught_covid_t_nm, ':r')
+    axs[1, 0].plot(x, inf_wo_mask_t, ':m')
     axs[1, 0].plot(x, inf_wo_mask_t, ':m')
     axs[1, 0].set_title('Number of people who are infected in the shop at t')
     axs[1,0].set(xlabel='Time steps (minutes)', ylabel='Shoppers')

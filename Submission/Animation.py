@@ -108,10 +108,10 @@ class LineAnimation:
 
     def update(self,framenum):
         percents = self.simulation.get_node_status() # getting the statuses of each node
+        print(percents)
         self.xdata.append(len(self.xdata))
         for status, percent in percents.items():
             self.ydata[status].append(percent)
-            self.line_mpl[status].set_data(self.xdata, self.ydata[status]) # getting the percentages of
-            # people at each infection level
+            self.line_mpl[status].set_data(self.xdata, self.ydata[status]) # getting the number of people at each infection level
         return list(self.line_mpl.values())
 
