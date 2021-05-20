@@ -1,20 +1,9 @@
-import argparse
+
 import numpy as np
-#import random as rd
-from numpy.random import random, randint
-from statistics import mean
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-# Import path generation from other file
-import Networkx_random_path_example as path_gen
-# Import aldi layout for other file
-import Networkx_aldi_layout as lay
-import Infection_rate_data as inf_rate
-import Simulation as simulation
-import Results as results
-import Animation as Animation
-import Plot_results as plot_results
+
 
 class Animation:
     """Class to run the line and grid animation"""
@@ -84,15 +73,15 @@ class GridAnimation:
             self.shop = np.empty((infected.shape))
             infected_range = np.arange(self.simulation.max_shoppers)
             self.shop = np.empty((infected.shape))
-            self.values = np.unique(infected.ravel())
+            self.values = np.unique(infected.ravel()) # working out the range of numbers of people within each node
             for i in infected_range:
-                self.shop[infected == i] = i
-            self.image.set_array(self.shop)
+                self.shop[infected == i] = i # appending infected number to shop
+            self.image.set_array(self.shop) # updating shop image
             return [self.image]
 
 
 class LineAnimation:
-    """Animate a line series showing numbers of people in each status"""
+    """Animate a line series showing numbers of people in each status in the shop at each time step"""
 
     def __init__(self, axes, simulation, duration):
         self.axes = axes
@@ -112,7 +101,8 @@ class LineAnimation:
 
     def init(self):
         self.axes.set_xlim([0, self.duration])
-        self.axes.set_ylim([0, self.simulation.max_shoppers]) # setting the y lim so that no matter the proportion
+        self.axes.set_ylim([0, self.simulation.max_shoppers])
+        # setting the y lim so that no matter the proportion
         #can visualise the number of shoppers
         return []
 
