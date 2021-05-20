@@ -7,18 +7,11 @@ from statistics import mean
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
-
-
-
-# Import path generation from other file
 import Networkx_random_path_example as path_gen
-# Import aldi layout for other file
-import Networkx_aldi_layout as lay
-import Infection_rate_data as inf_rate
+from Submission import Networkx_aldi_layout as lay, Infection_rate_data as inf_rate
 
 
 def main(args):
-    #max_entry , duration , max_shoppers = get_user_input()
     #using argpas to handing parsing command line arguments
     parser = argparse.ArgumentParser(description='Animate an epidemic')
     parser.add_argument('--max_entry', metavar='N', type=int, default=5,
@@ -214,25 +207,15 @@ class simulation:
 
         # adding the new people to the shop
         self.add_new_shopper(number_of_new_shoppers)
-
+        # recording numbers of shoppers
         simulation.people_at_time_step.append(len(self.shoppers))
-
-
-        #simulation.sus_wo_mask_t.append(np.sum(self.person.cords[0]))
-        #simulation.sus_w_mask_t.append(np.sum(self.person.cords[1]))
-        #simulation.inf_w_mask_t.append(np.sum(self.person.cords[2]))
-        #simulation.inf_wo_mask_t.append(np.sum(self.person.cords[3]))
-        #simulation.caught_cov.append(np.sum(self.person.cords[4]))
         self.get_shop_numbers()
-
         simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
         #add one to the time step counter
-
         self.time_step += 1
 
 
     def update_infection_risk(self):
-
         """updates matrix for risk of infection at each node in the shop"""
         #number of infected people ate ach shop node w/ mask
         i_w_mask = person.cords[2] # and again for 3 but without compensating for masks
@@ -251,8 +234,6 @@ class simulation:
 
         # create 2 layer array of risk
         simulation.shop_infection_risk = np.stack((risk_in_mask, risk_no_mask))
-
-
 
 
     def get_number_of_shoppers_entering(self):
@@ -603,25 +584,6 @@ def plot_results(simulation,duration):
     fig.tight_layout()
 
 
-#function for getting user input if prompted
-def get_user_input():
-    entry = input("Maximum number of people who can enter the shop at once: ")
-    duration = input("Number of time steps to run the simulation for: ")
-    max_shoppers = input("Maximum number of people allowed in the shop at once: ")
-    month = input("The month of data to retrieve COVID infection rate for: ")
-    path_system = input("The type of path system 0 = slow walker 1 = quick walker 2 = one way path system, 3 = mixed speed scenario: ")
-    params = [entry, duration, max_shoppers,month,path_system]
-    if all(str(i).isdigit() for i in params):  # Check input is valid
-        params = [int(x) for x in params]
-    else:
-        print(
-            "Could not parse input. The simulation will use default values:",
-            "\n5 people max entry at one time, 30 people max in the shop at one time, and the simulation will run for 200 time steps "
-            "using the month of 1120 for data, slow walkers and each individual having a 25% chance of entering the shop with infected.",
-        )
-        params = [5, 200, 30,1120,0]
-    return params
-
 class Animation:
     """Class to run the line and grid animation"""
     def __init__(self, simulation, duration):
@@ -730,6 +692,7 @@ class LineAnimation:
             self.line_mpl[status].set_data(self.xdata, self.ydata[status]) # getting the percentages of
             # people at each infection level
         return list(self.line_mpl.values())
+
 
 
 
