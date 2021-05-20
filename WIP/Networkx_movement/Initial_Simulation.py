@@ -31,7 +31,7 @@ def main(args):
                     help='The month to use to represent the infection rate where 320 is March 2020 (from 320 - 421)')
     parser.add_argument('--path_system', metavar='N', type=int, default=1,
                     help='The type of path system 0 = slow walker 1 = quick walker 2 = one way path system, 3 = mixed scenario')
-    parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.4,
+    parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
                     help='Probability of any individual in the area being infected')
     parser.add_argument('--plot', action='store_true',
                     help='Generate plots instead of animation')
