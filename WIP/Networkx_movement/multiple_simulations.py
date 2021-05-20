@@ -194,7 +194,7 @@ def plot_results(chosen_sim_arg):
 
     x_axis_label = get_plot_labels(chosen_sim_arg)[0]
     ax.set_xlabel(x_axis_label)
-    ax.set_ylabel('Risk of catching COVID')
+    ax.set_ylabel('Probability of catching COVID (%)')
     title = get_plot_labels(chosen_sim_arg)[1]
     ax.set_title(title )
 
