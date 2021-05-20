@@ -23,13 +23,13 @@ def main(args):
     parser = argparse.ArgumentParser(description='Animate an epidemic')
     parser.add_argument('--max_entry', metavar='N', type=int, default=5,
                         help='Maximum of N people can enter at once')
-    parser.add_argument('--duration', metavar='N', type=int, default=50,
+    parser.add_argument('--duration', metavar='N', type=int, default=200,
                         help='Run simulation for N time steps')
     parser.add_argument('--max_shoppers', metavar='N', type=int, default=30,
                     help='Maximum number of shoppers in the shop')
-    parser.add_argument('--month', metavar='myy', type=int, default=1120,
+    parser.add_argument('--month', metavar='myy', type=int,
                     help='The month to use to represent the infection rate where 320 is March 2020 (from 320 - 421)')
-    parser.add_argument('--path_system', metavar='N', type=int, default=0,
+    parser.add_argument('--path_system', metavar='N', type=int, default=1,
                     help='The type of path system 0 = slow walker 1 = quick walker 2 = one way path system, 3 = mixed scenario')
     parser.add_argument('--level_of_covid', metavar='P', type=float, default=0.25,
                     help='Probability of any individual in the area being infected')
@@ -225,7 +225,7 @@ class simulation:
         #simulation.caught_cov.append(np.sum(self.person.cords[4]))
         self.get_shop_numbers()
 
-        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4])
+        simulation.infected = (person.cords[2] + person.cords[3] + person.cords[4] + person.cords[5])
         #add one to the time step counter
 
         self.time_step += 1
@@ -234,19 +234,22 @@ class simulation:
     def update_infection_risk(self):
 
         """updates matrix for risk of infection at each node in the shop"""
-        #number of infected people ate ach shop node w/ mask
-        i_w_mask = person.cords[2] # and again for 3 but without compensating for masks
+        #number of infected people at each shop node w/ mask
+        i_w_mask = person.cords[2] 
         #number of infected people ate ach shop node w/o mask
         i_no_mask = person.cords[3]
 
-        prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
-        reduced_i_prob_w_mask = prob_of_i / 2 #chance of a person w/o mask catching covid from infected person w/ mask
+     #   prob_of_i = 0.2 #chance of a person w/o mask catching covid from infected person w/o mask
+        reduced_i_prob_w_mask = self.prob_of_i / 4 #chance of a person w/o mask catching covid from infected person w/ mask
 
         prob_of_i_from_i_w_mask = reduced_i_prob_w_mask * i_w_mask
-        prob_of_i_from_i_no_mask = prob_of_i * i_no_mask
+        prob_of_i_from_i_no_mask = self.prob_of_i * i_no_mask
 
         risk_no_mask = prob_of_i_from_i_w_mask + prob_of_i_from_i_no_mask
-        risk_in_mask = risk_no_mask / 2
+        risk_no_mask = np.clip(risk_no_mask,0, 0.95)
+
+        risk_in_mask = risk_no_mask / 4
+        risk_in_mask = np.clip(risk_in_mask,0, 0.95)
 
 
         # create 2 layer array of risk
@@ -319,7 +322,7 @@ class simulation:
     def get_node_status(self):
 
 
-        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4] # total people in shop
+        simgrid = person.cords[0] + person.cords[1] + person.cords[2] + person.cords[3] + person.cords[4] + person.cords[5] # total people in shop
         state = person.cords
         total_people = np.sum(simgrid)
 
@@ -339,7 +342,7 @@ class simulation:
             simulation.inf_mas = inf_mas
             inf_no_mask = person.cords[3]
             simulation.inf_no_mask = inf_no_mask
-            caught_covid = person.cords[4]
+            caught_covid = person.cords[4] + person.cords[5]
             simulation.caught_covid = caught_covid
 
             simulation.susceptible = (sus_no_mask + sus_mask)  # counting susceptible people for animation
@@ -380,7 +383,8 @@ class person:
         in level 1: each element records the number of people at that node who are suseptible and not wearing a mask
         in level 2: each element records the number of people at that node who are infected & wearing a mask
         in level 3: each element records the number of people at that node infected and not wearing a mask
-        in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
+        in level 4: each element records the number of people at that node who have caught covid whilst shopping wearing mask(removed)
+        in level 5: each element records the number of people at that node who have caught covid whilst shopping without a mask(removed)
 
         The __init__() method defines all of the attributes of a shopper:
         - their position
@@ -409,7 +413,7 @@ class person:
     """
     
 
-    cords = np.zeros((5,8,7))
+    cords = np.zeros((6,8,7))
 
     # all possible paths that could be taken by a person through the shop
     paths = path_gen.possible_paths(lay.aldi_layout(), (0,0),[(6,6), (7,6)])
@@ -492,8 +496,11 @@ class person:
         probability_of_infection = simulation.shop_infection_risk[self.pos]
 
         if probability_of_infection > random():
-            #change their SIR level to 4 (removed)
-            self.SIR_level = 4
+            if self.mask == 0:
+                self.SIR_level = 5 # removed not wearing mask
+            else:
+                self.SIR_level = 4 #removved wearing mask
+
             #now have to change their status for the cords array
             self.change_status()
 
@@ -737,6 +744,5 @@ if __name__ == "__main__":
 
     import sys
     main(sys.argv[1:])
-
 
 
