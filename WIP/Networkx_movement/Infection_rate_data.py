@@ -21,35 +21,9 @@ def infection_rate(month):
     infection_rates = infection_rates / 300  # estimating the infection rate based off of the number of cases in the bristol region
     infection_rates = infection_rates.to_numpy() # converting to a numpy array
     # if statements to extract the relevent infection rate
-    if month == 320:
-        inf_rate = infection_rates[0]
-    elif month == 420:
-        inf_rate = infection_rates[1]
-    elif month == 520:
-        inf_rate = infection_rates[2]
-    elif month == 620:
-        inf_rate = infection_rates[3]
-    elif month == 720:
-        inf_rate = infection_rates[4]
-    elif month == 820:
-        inf_rate = infection_rates[5]
-    elif month == 920:
-        inf_rate = infection_rates[6]
-    elif month == 1020:
-        inf_rate = infection_rates[7]
-    elif month == 1120:
-        inf_rate = infection_rates[8]
-    elif month == 1220:
-        inf_rate = infection_rates[9]
-    elif month == 121:
-        inf_rate = infection_rates[10]
-    elif month == 221:
-        inf_rate = infection_rates[11]
-    elif month == 321:
-        inf_rate = infection_rates[12]
-    elif month == 421:
-        inf_rate = infection_rates[13]
-    elif month == 521:
-        inf_rate = infection_rates[14]
+    months = [320,420,520,620,720,820,1020,1120,1220,121,221,321,421,521]
+    for i in [i for i, x in enumerate(months) if x == month]:
+        inf_rate = infection_rates[i]
     return inf_rate
+
 
