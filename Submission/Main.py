@@ -23,7 +23,16 @@ in bristol where 320 is March 2020 (from 320 - 421) can not set to set specific 
  - level_of_covid is the probability of any individual in the area being infected 
  - prob_of_i is the probability of any individual getting infected from the shop
  - chance_a_person_wears_a_mask sets likelyhood of mask wearers (1 for all masked, 0 for no masked)
- - input --plot to retrieve plots from simulation instead of animation'''
+ - input --plot to retrieve plots from simulation instead of the animation which is the default
+ 
+ 
+ The command line interface to the script makes it possible to run different
+simulations without needing to edit the code e.g.:
+
+    $ python Main.py                     # run simulation with default settings
+    $ python Main.py --duration = 120    # have run for 120 time steps (minutes)
+    $ python Main.py --help              # show all command line options
+'''
 
 def main(args):
     #using argpas to handing parsing command line arguments
@@ -54,6 +63,8 @@ def main(args):
     #if month not set then the level of covid variable used to base likelyhood of new person being infected
     else:
         level_of_covid_in_area = args.level_of_covid
+
+
 
     sim = simulation(args.max_entry, args.duration, args.max_shoppers, args.path_system, args.prob_of_i, args.chance_person_wears_a_mask, level_of_covid_in_area)
     sim.add_new_shopper(1)
