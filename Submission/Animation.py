@@ -68,7 +68,6 @@ class GridAnimation:
         return self.update(0)
 
     def update(self, framenum):
-            minute = framenum
             infected = self.simulation.infected
             self.shop = np.empty((infected.shape))
             infected_range = np.arange(self.simulation.max_shoppers)
@@ -101,14 +100,13 @@ class LineAnimation:
 
     def init(self):
         self.axes.set_xlim([0, self.duration])
-        self.axes.set_ylim([0, self.simulation.max_shoppers])
+        self.axes.set_ylim([0, self.simulation.max_shoppers / 2])
         # setting the y lim so that no matter the proportion
         #can visualise the number of shoppers
         return []
 
     def update(self,framenum):
         percents = self.simulation.get_node_status() # getting the statuses of each node
-        print(percents)
         self.xdata.append(len(self.xdata))
         for status, percent in percents.items():
             self.ydata[status].append(percent)

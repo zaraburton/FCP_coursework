@@ -71,8 +71,8 @@ class simulation:
         'Susceptible without a mask': SUSCEPTABLE_WO_MASK,
         'Infected with a mask': INFECTED_W_MASK,
         'Infected without a mask': INFECTED_WO_MASK,
-        'Caught COVID in shop with mask': CAUGHT_COV_IN_SHOP_M,
-        'Caught COVID in shop without a mask': CAUGHT_COV_IN_SHOP_NM,
+        'Caught COVID w mask': CAUGHT_COV_IN_SHOP_M,
+        'Caught COVID wo a mask': CAUGHT_COV_IN_SHOP_NM,
     }
 
     COLOURMAP = {
@@ -80,8 +80,8 @@ class simulation:
         'Susceptible without a mask': 'green',
         'Infected with a mask': 'red',
         'Infected without a mask': 'magenta',
-        'Caught COVID in shop with a mask': 'cyan',
-        'Caught COVID in shop without a mask': 'blue',
+        'Caught COVID w mask': 'cyan',
+        'Caught COVID wo a mask': 'blue',
     }
     COLOURMAP_RGB = {
         'yellow': (255, 255, 0),
