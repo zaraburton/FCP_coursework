@@ -15,7 +15,7 @@ import Simulation as simulation
 class simulation:
     """Simulation of the spread of covid within a matrix, representing a supermarket.
 
-    The supermarket is represented as an 8 x 7 x 5 grid.
+    The supermarket is represented as an 8 x 7 x 6 grid.
     The 8 x 7 x 2 array reprensents the shop space.
 
     There is one entrance at the bottom left and two exits at the top right of the grid.
@@ -277,7 +277,8 @@ class person:
         in level 1: each element records the number of people at that node who are suseptible and not wearing a mask
         in level 2: each element records the number of people at that node who are infected & wearing a mask
         in level 3: each element records the number of people at that node infected and not wearing a mask
-        in level 4: each element records the number of people at that node who have caught covid whilst shopping (removed)
+        in level 4: each element records the number of people at that node who have caught covid whilst wearing a mask
+        in level 5: each element records the number of people at that node who have caught covid whilst not wearing a mask
 
         The __init__() function defines all of the attributes of a shopper:
         - their position
