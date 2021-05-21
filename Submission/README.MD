@@ -51,3 +51,8 @@ simulations without needing to edit the code e.g.:
 
 An analysis of varying the restrictions was completed by running the simulation for multiple iterations.
 The results of this are presented in the report also appended in this repositary.
+
+    $ python multiple_simulations.py  --change 0  #run multiple simulations and change variable 0
+    $ python multiple_simulatons.py --path_system #run multiple simulations looking at the efect of oneway systems
+    
+--change can be followed by 0 = max_entry, 1 = duration, 2 = max_shoppers, 3 = prob_of_i, 4 = chance_person_wears_mask, 5 = level_of_covid_in_area
