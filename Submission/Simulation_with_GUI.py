@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon May 17 10:40:01 2021
-
-@author: wills
+Python script allowing the user the option of using a GUI to input values into the simulation
 """
 
 # import all relevent packages and other python scripts
@@ -10,7 +8,6 @@ import tkinter as tk
 import tkcalendar as tkcal
 import random
 import Infection_rate_data as inf_rate
-#import Simulation as sim
 from Simulation import simulation as simulation
 from Results import results as results
 from Animation import Animation as Animation
@@ -143,32 +140,32 @@ max_people_slider.set(random.randint(1,30))
 
 # Defining function to take all GUI inputs and use them to run the simulation code
 def search_function():
-    level_of_infection_val = int(infection_slider.get())
-    num_people_enter_val = int(num_people_enter_slider.get())
-    time_val = int(time_slider.get())
-    max_people_val = int(max_people_slider.get())
+    level_of_covid_in_area = infection_slider.get()
+    max_entry = int(num_people_enter_slider.get())
+    duration = int(time_slider.get())
+    max_shoppers = int(max_people_slider.get())
     prob_of_i = 0.4
     
     # If oneway button selected then assign variable with a 2
     if var_oneway == True:
-        path_type = 2
+        path_system = 2
     else:
-        path_type = 1
+        path_system = 0
     
     # If mask button selected then assign variable with a 1
     if var_mask == True:
-        mask_prob = 1
+        chance_person_wears_a_mask = 1
     else:
-        mask_prob = 0
+        chance_person_wears_a_mask = 0
    
     # Runs same simulation operations as in the Main.py script
     # Uses GUI inputs to run simulation and print results in console window
-   
-    sim = simulation(num_people_enter_val, time_val, max_people_val, path_type, prob_of_i, mask_prob, level_of_infection_val)
+
+    sim = simulation(max_entry, duration, max_shoppers, path_system, prob_of_i, chance_person_wears_a_mask, level_of_covid_in_area)
     sim.add_new_shopper(1)
-    results(sim, time_val)
-    plot_results(sim, time_val)
-    animation = Animation(sim, time_val)
+    results(sim, duration)
+    plot_results(sim, duration)
+    animation = Animation(sim, duration)
     animation.show()
 
 # Create button to save all current GUI inputs and use them in simulation
