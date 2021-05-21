@@ -14,7 +14,9 @@ Inorder to run the script the following packages have to be installed:
 
 Main.py function should be used for running a simulation of COVID spreading in a supermarket.
 Running the Main.py function runs a simulation and shows the user an animation of it for visualisation. 
-The programme can also be run with a GUI : WILL ADD NOTE HERE 
+There is also the option of running the simulation via a GUI.
+Running the Simulation_with_GUI.py script launches a GUI allowing the user to select a number of inputs,
+with these inputs used in the simulation automatically.
 
 The shop is simulated as a 3d array 8 nodes by 7 nodes in 6 layers. 
 Multiple people can be in the same node at the same time.
@@ -51,8 +53,3 @@ simulations without needing to edit the code e.g.:
 
 An analysis of varying the restrictions was completed by running the simulation for multiple iterations.
 The results of this are presented in the report also appended in this repositary.
-
-    $ python multiple_simulations.py  --change 0  #run multiple simulations and change variable 0
-    $ python multiple_simulatons.py --path_system #run multiple simulations looking at the efect of oneway systems
-    
---change can be followed by 0 = max_entry, 1 = duration, 2 = max_shoppers, 3 = prob_of_i, 4 = chance_person_wears_mask, 5 = level_of_covid_in_area
