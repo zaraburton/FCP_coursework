@@ -51,5 +51,10 @@ simulations without needing to edit the code e.g.:
     $ python Main.py --duration = 120    # have run for 120 time steps (minutes)
     $ python Main.py --help              # show all command line options
 
-An analysis of varying the restrictions was completed by running the simulation for multiple iterations.
+An analysis of varying the restrictions was completed by running the simulation for multiple iterations, using multiple_simulations.py.
 The results of this are presented in the report also appended in this repositary.
+
+    $ python multiple_simulations.py  --change 0  #run multiple simulations and change variable 0
+    $ python multiple_simulatons.py --path_system #run multiple simulations looking at the efect of oneway systems
+
+--change can be followed by 0 = max_entry, 1 = duration, 2 = max_shoppers, 3 = prob_of_i, 4 = chance_person_wears_mask, 5 = level_of_covid_in_area
